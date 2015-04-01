@@ -1,0 +1,252 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>sequence subgroups</title>
+<style type="text/css">
+<!--
+.style1 {font-family: Georgia, "Times New Roman", Times, serif}
+.style2 {font-size: small}
+.style3 {font-size: x-small}
+.style4 {font-size: small; color: #999999;}
+.style7 {	font-size: large
+}
+-->
+</style>
+</head>
+<script type="text/javascript">	
+
+function onloadfunction(){
+		//if there's something encoded in the URL after "?" put it right into the inputfield
+		if(unescape(document.location).split('?').length > 1){
+			document.getElementById("input").value = ""
+			for(var a=0; a < unescape(document.location).split('?')[1].split('-').length; a++)
+				document.getElementById("input").value += unescape(document.location).split('?')[1].split('-')[a]+"\n"	
+}}
+
+function thefunction(form) {
+
+results = document.getElementById("results")
+input = document.getElementById("input")
+log = document.getElementById("logfield")
+
+var ordermatters = document.getElementById("order_0").checked
+var touchmatters = document.getElementById("touch_0").checked
+var groups = new Array
+
+//determine if phrases
+	var phrases = false
+	if(input.value.split('\n')[0].split(' ').length > 1) phrases = true
+
+	if(phrases){
+		var uniquephrases = new Array
+		var elements = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+		
+		for(var a=0; a < input.value.split('\n').length; a++)
+			for(var b=0; b < input.value.split('\n')[a].split(' ').length; b++){
+			var already = false; for(var c=0; c < uniquephrases.length; c++) if(input.value.split('\n')[a].split(' ')[b] == uniquephrases[c]) already = true
+			if(!already) uniquephrases.push(input.value.split('\n')[a].split(' ')[b])
+			//log.value += "\n"+input.value.split('\n')[a].split(' ')[b]
+		}
+		
+		log.value += "\nencoding phrases as single characters:\n"
+		
+		for(var a=0; a < input.value.split('\n').length; a++){
+			var linebuffer = ""
+			for(var b=0; b < input.value.split('\n')[a].split(' ').length; b++){
+				for(var d=0; d < uniquephrases.length; d++) if(input.value.split('\n')[a].split(' ')[b] == uniquephrases[d]){ linebuffer += elements[d]			
+				log.value += input.value.split('\n')[a].split(' ')[b] + ":" + elements[d] + "  "}
+			} log.value += "\n"
+			groups.push(linebuffer)
+		}
+	log.value += "\nencoded input: "+groups+"\n\n"
+	}
+	else 
+ 		groups = input.value.split('\n')
+
+
+//generate subgroups
+var subgroups = new Array
+
+if(!touchmatters){
+for(var i=0; i < groups.length; i++){
+  
+	var scheme = new Array
+	for(var n=1; n < Math.pow(2,groups[i].length); n *= 2) scheme.push(n)
+	scheme.reverse()
+  
+ 	for(var j=1; j < Math.pow(2,groups[i].length); j++){
+           
+	//workaround for binary(int) function in java 
+	var tobin = j
+	var buildbin = ""	  
+	for(var p=0; p < scheme.length; p++){
+  		if(tobin >= scheme[p]){ buildbin += '1'; tobin -= scheme[p] }
+  		else buildbin += '0'
+	}
+    var bin = buildbin // just binary(a) in java
+    
+    var buffer = new Array
+    for(var k=0; k < bin.length; k++) if(bin.charAt(k)=='1') buffer.push(groups[i].charAt(k))
+    
+    if(!ordermatters) buffer.sort(); 
+    var subgroup = ""; for(var a=0; a < buffer.length; a++) subgroup += buffer[a]
+    subgroups.push(subgroup) 
+  }
+}
+}
+else {
+for(var i=0; i < groups.length; i++)
+	for(var f=0; f < groups[i].length; f++)
+		for(var g=0; g < groups[i].length-f; g++){ 
+		    
+		    var piece = groups[i].substring(g,g+f+1)
+		    
+		    if(!ordermatters){
+		    var buffer = new Array
+    		for(var k=0; k < piece.length; k++) buffer.push(piece.charAt(k))
+    		buffer.sort(); 
+    		var piecebuild = ""; for(var a=0; a < buffer.length; a++) piecebuild += buffer[a]
+    		subgroups.push(piecebuild)
+    		}
+    		else subgroups.push(piece) 
+		//results.value += "\n"+groups[i].substring(g,g+f+1)
+		}
+}
+log.value += "raw subgroups:"
+for(var z=0; z < subgroups.length; z++) log.value += "\n"+subgroups[z]
+log.value += "\n\ncounting through + sorting\n"
+subgroups.sort()
+
+//count through subgroups
+var subscount = new Array 
+var count=1; var maxcount=0
+for(var i=1; i < subgroups.length; i++){
+  if(subgroups[i] == subgroups[i-1]) count++
+  else{ subscount.push(count+": "+subgroups[i-1]); count=1 }
+  
+  if(i == subgroups.length-1){ if(subgroups[subgroups.length-1] == subgroups[subgroups.length-2]) subscount.push((count+1)+":"+subgroups[subgroups.length-2])
+  else subscount.push("1:"+subgroups[subgroups.length-1]) 
+  }
+  if(count > maxcount) maxcount=count
+}
+
+
+//find maxvalue to sort according to (occurrence * subgroup length)
+var maxvalue = 0
+for(var y=0; y < subscount.length; y++)
+	if(parseInt(subscount[y].split(':')[0]) * subscount[y].split(':')[1].length > maxvalue) maxvalue = parseInt(subscount[y].split(':')[0]) * subscount[y].split(':')[1].length
+//log.value+="\n\n"+maxvalue+"\n\n"; //log.value+="\n\n"+subscount+"\n\n"
+
+//go through again, this time sorting it
+var subssorted = new Array
+for(var q = maxvalue; q > 0; q--){
+	for(var r=0; r < subscount.length; r++)
+		if(parseInt(subscount[r].split(':')[0]) * subscount[r].split(':')[1].length == q){ 
+			subssorted.push(subscount[r])
+			//if (parseInt(subscount[r].split(':')[0]) > 1) log.value+="\n"+subscount[r]
+			}
+//log.value+="\n\n"+q+"\n\n"
+}
+
+subscount = subssorted
+log.value += "\ndisplay subgroups that occur more than once sorted by (occurrence * subgroup length):\n\n"
+
+
+//show only with 2 or more ocurrences
+if(phrases)log.value += "\ndecoding characters back to their respective phrases:\n"
+
+for(var i=0; i < subscount.length; i++) if(parseInt(subscount[i].split(':')[0]) > 1) {
+	if(phrases){
+		var buffer = ""
+		for(var n=0; n < subscount[i].split(':')[1].length; n++) 
+			for(var m=0; m < elements.length; m++) 
+				if(subscount[i].split(':')[1].charAt(n) == elements[m]) buffer += uniquephrases[m] + " "
+		log.value += subscount[i].split(':')[0] + ": " + buffer + "\n"
+		results.value += subscount[i].split(':')[0] + ": " + buffer + "\n"
+	}
+	else {results.value += subscount[i] + "\n"; log.value += subscount[i] + "\n"}
+}
+results.value += "\n- - - -\n\n"
+log.value += "\n- - - -\n\n"
+
+
+
+
+}
+
+</script>
+<body>
+<p class="style4"><a href="index.html">start</a> | subgroups | <a href="patterns.html">patterns</a> | <a href="mapping.html">mapping</a></p>
+<p class="style1">&nbsp;</p>
+<table width="80%" border="0" align="center">
+  <tr>
+    <td width="46%" class="style1"><p class="style7"><strong>subgroups </strong>in sequences</p>
+      <p class="style4"> Version 2 / April 18, 2012 / Benjamin Aaron Degenhart</p>
+      <p class="style4">&nbsp;</p>
+      <p>Create all possible subgroups (n^2) for each sequence (length n) by counting up to n^2 in binary numbers (e.g. 101001 = 41) and adding a char at the place of each '1' (e.g. the binary 41 gives the subgroup 'acf' from the sequence 'abcdef'). Count occurrence of each subgroup. Output a  list of subgroups ranked by [length * occurrence] across all sequences.</p>
+      <p><a href="subgroups.html?peter paul julia martin-franz bettina paul hugo julia-fritz martin julia hugo fabian-hugo franz fabian paul bettina">example with phrases</a></p>
+      <p>&nbsp;</p>
+      <p class="style2"><em>Possible uses:</em></p>
+      <ul>
+        <li class="style2">A group has to split into subgroups and has to solve the grouping 'democratically'; ask everyone to give their subgroup-preference and run this algorithm over their sequences. The result will show the social constellation that the system gravitates towards. </li>
+        <li class="style2">A brainstorming-session has generated lots of items and it's now necessary to cluster them in categories. From all possible categorization schemes its often the first applied one that  dominates in a social setting, not necessarily the best one. Applying  this algorithm you can ask every individual to cluster to the best of their abilities on their own and then look which items gravitate towards each other across all categorization schemes. Same counts for the structure of a website too for instance.</li>
+        <li class="style2">A yoga teacher has 1000 positions to draw from when he assembles the sequence of 10 positions in todays session. We could record his selection over a year and analyze the constellational gravity within the positions. Of course the 'arc' (narrative) in each session is not getting analyzed with this method.</li>
+        <li class="style2">Music playlists, ingredients in food, elements across CVs, narrative elements in stories, any monochronic method/procedures that draws from a shared pools of entities and arise as selection of those ...</li>
+      </ul>
+      <p class="style2">&nbsp;</p>
+    <p class="style2">&nbsp;</p>
+    <p class="style2">&nbsp;</p>
+    <p class="style2">&nbsp;</p>
+    <p class="style2">&nbsp;</p>
+    <p class="style2">&nbsp;</p>
+    <p class="style2">&nbsp;</p>
+    <p class="style2">&nbsp;</p>
+    <p class="style2">&nbsp;</p></td>
+    <td width="8%" class="style1"><p align="left">&nbsp;</p>    </td>
+    <td width="46%" class="style1"><p align="left">&nbsp; </p>
+      <p align="left">input: </p>
+      <p align="left">
+          <textarea name="input" cols="48" rows="8" id="input">cdae
+abc
+rbacg
+derbhi</textarea>
+        </p>
+      <p align="left">
+          <label>
+          <input type="radio" name="order" value="radio" id="order_0" />
+          <span class="style2">order matters</span></label>
+          <span class="style3">('abc' &amp; 'cdae' will not share 'ac')</span><br />
+          <label>
+          <input name="order" type="radio" id="order_1" value="radio" checked="checked" />
+          <span class="style2">order doesn't matter</span></label>
+          <span class="style3">('abc' &amp; 'cdae' will  share 'ac')</span><br />
+        </p>
+      <p align="left">
+          <label>
+          <input type="radio" name="touch" value="radio" id="touch_0" />
+          <span class="style2">touch  matters </span></label>
+          <span class="style3">('abc' &amp; 'acbd' will not share 'ab')</span><br />
+          <label>
+          <input name="touch" type="radio" id="touch_1" value="radio" checked="checked" />
+          <span class="style2">touch doesn't matter</span></label>
+          <span class="style3">('abc' &amp; 'acbd' will  share 'ab')</span></p>
+      <p align="left"><br />
+      </p>
+      <p align="left">
+          <input type="submit" name="compute" id="compute" value="compute" onclick="thefunction(form)"/>
+      <a href="subgroups.html" class="style2">reset</a></p>
+      <p align="left">&nbsp;</p>
+      <p align="left"> results: </p>
+      <p align="left">
+          <textarea name="results" cols="48" rows="18" id="results"></textarea>
+        </p>
+      <p align="left">log: </p>
+      <p align="left">
+          <textarea name="logfield" cols="48" rows="12" id="logfield"></textarea>
+      </p></td>
+  </tr>
+</table>
+<script>window.onload=onloadfunction</script>
+</body>
+</html>

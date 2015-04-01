@@ -1,0 +1,387 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>sequence patterns</title>
+<style type="text/css">
+<!--
+.style1 {font-family: Georgia, "Times New Roman", Times, serif}
+.style4 {font-size: small; color: #999999;}
+.style7 {	font-size: large
+}
+.style8 {
+	font-family: Georgia, "Times New Roman", Times, serif;
+	font-style: italic;
+	font-size: small;
+}
+.style9 {font-family: Georgia, "Times New Roman", Times, serif; font-size: small; }
+.style10 {font-family: Georgia, "Times New Roman", Times, serif; font-style: italic; }
+-->
+</style>
+</head>
+<script type="text/javascript">	
+
+	function onloadfunction(){
+		//if there's something encoded in the URL after "?" put it right into the inputfield
+		if(unescape(document.location).split('?').length > 1){
+			document.getElementById("inputfield").value = ""
+			for(var a=0; a < unescape(document.location).split('?')[1].split('-').length; a++)
+				document.getElementById("inputfield").value += unescape(document.location).split('?')[1].split('-')[a]+"\n"	
+	}}
+
+  function thefunction(form) {
+  
+  	var output = document.getElementById("outputfield")
+	var seqtest = document.getElementById("inputfield").value.split('\n')	
+
+//DETERMINE MAPPING OR NOT
+	var mapping = false
+	if(seqtest[0].split(' ').length > 1) mapping = true
+	
+	if(mapping){
+		var allobjects = new Array
+		var mapsource = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+		for(var i=0; i<seqtest.length; i++)
+			for(var j=0; j<seqtest[i].split(' ').length; j++){
+				var already=false
+				for( var k=0; k<allobjects.length; k++) 
+					if(seqtest[i].split(' ')[j] == allobjects[k])already=true	
+				if(!already)allobjects.push(seqtest[i].split(' ')[j])	
+			}
+		for(var m=0; m < allobjects.length; m++) allobjects[m] = mapsource.charAt(m) + "=" + allobjects[m]
+		output.value += "\nmapping unique strings to chars:\n"+allobjects+"\n\n"
+	
+		var mappedseq = new Array	
+		for(var i=0; i<seqtest.length; i++){
+			var buffer=""
+			for(var j=0; j<seqtest[i].split(' ').length; j++){		
+				for(var k=0; k < allobjects.length; k++)	
+				if(allobjects[k].split('=')[1] == seqtest[i].split(' ')[j]) buffer += allobjects[k].split('=')[0]
+			}
+			mappedseq.push(buffer)
+		}
+		output.value += "respective char-sequences:\n"+mappedseq+"\n"	
+		
+		var seq = new Array
+		seq = mappedseq		
+	}
+	else 
+		var seq = document.getElementById("inputfield").value.split('\n')
+				
+	
+		
+//TOTALITY
+
+	var elements = new Array
+	for(var i=0; i<seq.length; i++)
+		for(var j=0; j<seq[i].length; j++){
+			var already=false
+			for( var k=0; k<elements.length; k++) 
+				if(elements[k] == seq[i].charAt(j))already=true	
+			if(!already)elements.push(seq[i].charAt(j))	
+		}	
+
+//MORE INFO
+
+	var smin=1000; var smax=0; var addup=0; 
+	for(var a=0; a<seq.length; a++){
+  		if(seq[a].length < smin) smin = seq[a].length; if(seq[a].length > smax) smax = seq[a].length;  
+  		addup += seq[a].length;
+	}
+	output.value += "\nsequences: "+seq.length+"\ntotal elements: "+addup
+	output.value += "\nelements per sequence: \n   min: "+smin+"\n   max: "+smax+"\n   average: "+Math.round((addup/seq.length)*100)/100
+	output.value += "\n"+elements.length+" unique elements:\n   "+elements+"\n\nPATTERNS"
+
+//FIND PATTERNS
+
+	var patterns = new Array
+		
+	for(var a=0; a<seq.length-1;a++)
+    	for(var b=a+1; b<seq.length; b++){
+		
+			var one="", two="";  
+  			if(seq[a].length >= seq[b].length){two = seq[a]; one = seq[b];}
+   			else {two = seq[b]; one = seq[a];}   
+  			var onel = one.length, twol = two.length;		
+			//output.value += "\n"+ onel+": "+one+"  /  "+twol+": "+two
+			
+			for(var i=1; i< (onel+(twol-onel)+(onel-1)+1); i++){
+  				var upper="", lower="";
+				
+				if(i <= onel) {
+    				upper = one.substring(onel-i,onel);
+    				lower = two.substring(0,i);}
+				if(i > onel && i <= onel+(twol-onel)){
+					upper = one;
+    				lower = two.substring(i-onel,i);}
+				if(i > onel+(twol-onel)){
+					upper = one.substring(0,onel+twol-i);
+    				lower = two.substring(i-onel,twol);}
+				
+				var buffer=""; var matches=0;
+				for(var k=0; k<upper.length; k++){
+    				if(upper.charAt(k) == lower.charAt(k)){matches++; buffer+=upper.charAt(k);}
+    				else buffer+=".";}
+				if(matches>0 && buffer.length>1){
+     				var already=false; for(var p=0; p<patterns.length; p++)if(patterns[p] == buffer)already=true;
+     				if(!already)patterns.push(buffer);}
+			}
+		}
+	//output.value += "\n"+patterns
+	
+	
+//COUNT OCCURRENCE OF PATTERNS
+
+	var maxsortvalue = 0; var counts = new Array;
+	for(var r=0; r<patterns.length; r++){
+		var count=0;
+	  	for(var s=0; s<seq.length; s++){
+			var moves = seq[s].length-patterns[r].length;
+  			if(moves > -1){
+   				var step=0; 
+				while(step < moves+1){
+      				var ismatch=true;
+					for(var t=0; t<patterns[r].length; t++)if(patterns[r].charAt(t) !='.')if(patterns[r].charAt(t) != seq[s].charAt(t+step))ismatch=false;    
+      				if (ismatch) count++;
+      				step++;
+    			}
+  			}  
+  		}
+ 		counts.push(count); //determine sort value max (elementswithin * count * length):
+		var thissortvalue = (patterns[r].length - patterns[r].split('.').length +1) * count * patterns[r].length		
+		if(thissortvalue > maxsortvalue) maxsortvalue = thissortvalue
+		//output.value += "\n"+patterns[r]+"  "+patterns[r].length+"  "+count + "  " + (patterns[r].length - patterns[r].split('.').length +1) + "  "+thissortvalue
+	}
+	//output.value += "\nmaxcount: "+maxcount
+
+//SORT PATTERNS
+
+	var sortvalues=maxsortvalue; var countssorted = new Array; var patternssorted = new Array; var elementswithin = new Array
+	while(sortvalues > 0){
+  		for(var i=0; i<counts.length; i++){
+			var thiselementswithin = patterns[i].length - patterns[i].split('.').length +1
+			var thissortvalue = thiselementswithin * counts[i] * patterns[i].length			
+    		if(thissortvalue == sortvalues){countssorted.push(counts[i]); patternssorted.push(patterns[i]); elementswithin.push(thiselementswithin);}
+  			}
+			sortvalues--;
+	}//output:
+	//output.value += "\npattern\tlength\toccurence\telementswithin\tsortvalue"
+	output.value += "\ncount\tsort\tpattern"
+	for(var i=0; i<countssorted.length; i++){// if(countssorted[i] > 1){ 
+		var thissortvalue = patternssorted[i].length * countssorted[i] * elementswithin[i]
+		//output.value += "\n"+patternssorted[i]+"\t"+patternssorted[i].length+"\t"+countssorted[i]+"\t"+elementswithin[i]+"\t"+thissortvalue
+		output.value += "\n"+countssorted[i]+"\t"+thissortvalue+"\t"+patternssorted[i]
+		if(!mapping) results.value += countssorted[i]+"\t"+patternssorted[i]+"\n"
+	}
+
+	//mapping back if (mapping)
+	if(mapping){
+		output.value += "\n\nmapping char's back to respective strings:\n"
+		
+		for(var d=0; d<countssorted.length; d++) if(countssorted[d] > 1){
+		
+			var buffer="";
+			for(var f=0; f<patternssorted[d].length; f++){
+				if(patternssorted[d].charAt(f) == '.') buffer+=" ■"
+				else for(var g=0; g<allobjects.length; g++) 
+						if(patternssorted[d].charAt(f) == allobjects[g].split('=')[0]) buffer+=" "+allobjects[g].split('=')[1]
+			}	
+			output.value += "\n"+countssorted[d]+"\t"+buffer.substring(1,buffer.length) //cut the first space away
+			results.value += countssorted[d]+"\t"+buffer.substring(1,buffer.length)+"\n"
+		}	
+	}
+	results.value += "\n- - - -\n\n"	
+	output.value += "\n\n- - - -\n\n"	
+	
+	
+		
+}
+</script>
+<body>
+<p class="style4"><a href="index.html">start</a> | <a href="subgroups.html">subgroups</a> | patterns | <a href="mapping.html">mapping</a></p>
+  <p>&nbsp;</p>
+  <table width="80%" border="0" align="center">
+    <tr>
+      <td width="46%"><div align="left" class="style1">
+        <p class="style7"><strong>patterns </strong>in sequences</p>
+        <p class="style4"> Version 2 / March 20, 2012 / Benjamin Aaron Degenhart</p>
+        <p><em>(doesn't work on Firefox for some reason)</em></p>
+        <p>&nbsp;</p>
+        <p>This algorithm looks for patterns in sequences. </p>
+        <p><a href="patterns.html?this is an example using-written words as string elements-and because i repeat some things-like the example and the written words-or the string things-it will show us patterns">phrase example</a></p>
+        <p>&nbsp;</p>
+        <p class="style8">Possible uses:</p>
+        <ul>
+          <li class="style9">Let's say sequences of tasks throughout working-days have been logged in 20 different categories over the last 5 years across 100 employers. A pattern-analyzing algorithm could reveal  interesting correlations.</li>
+          <li class="style9">Similar to 'subgroups'; methods/procedures, CVs, meeting-minutes, choreographies, dentists teeth-codes, music playlists, recipes, travel-routes... </li>
+        </ul>
+        <p>&nbsp;</p>
+        <p class="style10">How it works:</p>
+        <p class="style1">Take each possible pair ((n/2) * (n-1)) of the sequences and slide B (equal or bigger length than A) along A step by step. Look at each step for vertical character-matches. The number of steps until a sliding is completed  is: [lengthA + (lengthB - lengthA) + (lengthA - 1)]</p>
+        <p class="style1"> As example one of the 8 different couples from the prefilled input:</p>
+        step 1 (first):
+        <table width="288" border="0">
+          <tr>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">A</td>
+            <td width="12">B</td>
+            <td width="12">F</td>
+            <td width="12">R</td>
+            <td width="12">D</td>
+            <td width="12">S</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="10">&nbsp;</td>
+          </tr>
+          <tr>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td colspan="2"><div align="center">&lt;-</div></td>
+            <td>C</td>
+            <td>R</td>
+            <td>N</td>
+            <td>F</td>
+            <td>S</td>
+            <td>D</td>
+            <td>T</td>
+          </tr>
+        </table>
+        <p>... step 7:</p>
+        <table width="288" border="0">
+          <tr>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">A</td>
+            <td width="12">B</td>
+            <td width="12" bgcolor="#FFCC00">F</td>
+            <td width="12">R</td>
+            <td width="12" bgcolor="#FFCC00">D</td>
+            <td width="12">S</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="10">&nbsp;</td>
+          </tr>
+          <tr>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td colspan="2"><div align="center">&lt;-</div></td>
+            <td>C</td>
+            <td>R</td>
+            <td>N</td>
+            <td bgcolor="#FFCC00">F</td>
+            <td>S</td>
+            <td bgcolor="#FFCC00">D</td>
+            <td>T</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+          </tr>
+        </table>
+        <p>pattern found: [. . F. D .]</p>
+        <p>... step 12 (last):        </p>
+        <table width="288" border="0">
+          <tr>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">A</td>
+            <td width="12">B</td>
+            <td width="12">F</td>
+            <td width="12">R</td>
+            <td width="12">D</td>
+            <td width="12">S</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="12">&nbsp;</td>
+            <td width="10">&nbsp;</td>
+          </tr>
+          <tr>
+            <td>C</td>
+            <td>R</td>
+            <td>N</td>
+            <td>F</td>
+            <td>S</td>
+            <td>D</td>
+            <td>T</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+          </tr>
+        </table>
+        <p>When finding a pattern, check if it's already been found - if not append it to a stack of all patterns and run through all sequences to count how many times this pattern appears in total. </p>
+        <p>Ouput a list of patterns sorted by the factor of [occurrence * length * distinct elements (not '.' placeholders)].</p>
+        </div></td>
+      <td width="8%"><p align="left" class="style1">&nbsp;</p>      </td>
+      <td width="46%"><p align="left" class="style1">input: </p>
+        <p align="left" class="style1">
+          <textarea name="inputfield" cols="48" rows="9" id="inputfield">EAMBDT
+BCANFGRO
+ABFRDS
+EFMRBFGDO
+CRNFSDT</textarea>
+        </p>
+        <p align="left" class="style1">
+          <label></label>
+          <label></label>
+          </p>
+        <p align="left" class="style1">&nbsp;</p>
+        <p align="left" class="style1">
+          <input type="submit" name="Submit" id="button" value="compute" onclick="thefunction(form)"/>
+          <span class="style9"><a href="patterns.html">reset</a></span> </p>
+        <p align="left" class="style1">&nbsp;</p>
+        <p align="left" class="style1">results:</p>
+        <p align="left" class="style1">
+          <textarea name="results" cols="48" rows="10" id="results"></textarea>
+        </p>
+        <p align="left" class="style1">log:</p>
+        <p align="left" class="style1">
+          <textarea name="outputfield" cols="48" rows="24" id="outputfield"></textarea>
+      </p></td>
+    </tr>
+  </table>
+  <p>&nbsp;</p>
+
+<script>window.onload=onloadfunction</script>
+
+</body>
+</html>

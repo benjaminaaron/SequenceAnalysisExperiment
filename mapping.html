@@ -1,0 +1,1172 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>sequence mapping</title>
+<style type="text/css">
+<!--
+.style1 {font-family: Georgia, "Times New Roman", Times, serif}
+.style3 {
+	font-size: small;
+	color: #999999;
+}
+.style7 {
+	font-size: large;
+	font-weight: bold;
+}
+.style8 {font-size: large;}
+.style9 {
+	font-style: italic;
+	font-family: Georgia, "Times New Roman", Times, serif;
+}
+.style10 {font-size: small}
+.style11 {
+	color: #FF0000;
+	font-weight: bold;
+}
+.style12 {color: #FF0000}
+.style13 {color: #0000FF}
+.style14 {color: #00FF00}
+.style16 {color: #000000}
+.style18 {color: #999999}
+.style20 {color: #FFFF00}
+.style21 {color: #999999; font-family: Georgia, "Times New Roman", Times, serif; }
+.style22 {color: #FF0000; font-family: Georgia, "Times New Roman", Times, serif; }
+.style23 {color: #0000FF; font-family: Georgia, "Times New Roman", Times, serif; }
+.style24 {color: #00FF00; font-family: Georgia, "Times New Roman", Times, serif; }
+.style26 {font-family: Georgia, "Times New Roman", Times, serif; font-weight: bold; }
+.style27 {
+	font-family: Georgia, "Times New Roman", Times, serif;
+	font-size: small;
+	color: #999999;
+}
+.style28 {font-style: italic; font-family: Georgia, "Times New Roman", Times, serif; color: #999999; }
+.style29 {font-family: Georgia, "Times New Roman", Times, serif; font-weight: bold; color: #999999; }
+-->
+</style>
+</head>
+<script type="text/javascript">	
+
+function onloadfunction(){
+	//if there's something encoded in the URL after "?" (must have format "seqA1,seqA2-seqB1,seqB2-task") put it into the fields
+	if(unescape(document.location).split('?').length > 1){
+		if(unescape(document.location).split('?')[1].split('-').length > 1) document.getElementById("seqAinput").value = unescape(document.location).split('?')[1].split('-')[0]
+		else document.getElementById("seqAinput").value = unescape(document.location).split('?')[1]
+		
+		if(unescape(document.location).split('?')[1].split('-').length > 1) document.getElementById("seqBinput").value = unescape(document.location).split('?')[1].split('-')[1]
+		if(unescape(document.location).split('?')[1].split('-').length > 2) document.getElementById("task").value = unescape(document.location).split('?')[1].split('-')[2]
+		if(unescape(document.location).split('?')[1].split('-').length > 3) document.getElementById("targetlength").value = unescape(document.location).split('?')[1].split('-')[3]
+	}
+}
+
+function thefunction(form) {
+
+log = document.getElementById("logfield")
+results = document.getElementById("resultsfield")
+
+
+var seqAraw = document.getElementById("seqAinput").value
+var seqBraw = document.getElementById("seqBinput").value
+var seqAnewstring = document.getElementById("task").value
+
+//determine if phrases
+var phrases = false; if(seqAraw.split(' ').length > 1) phrases = true
+
+if(phrases){
+	var uniquephrasesA = new Array
+	var uniquephrasesB = new Array	
+	var elementsA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+	var elementsB = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+	//build uniquephrasesA
+	for(var b=0; b < seqAraw.split(',').length; b++)
+		for(var c=0; c < seqAraw.split(',')[b].split(' ').length; c++){
+			var already = false
+			for(var d=0; d < uniquephrasesA.length; d++) if(seqAraw.split(',')[b].split(' ')[c] == uniquephrasesA[d]) already = true
+			if(!already) uniquephrasesA.push(seqAraw.split(',')[b].split(' ')[c])
+		}
+	//now use uniquephrasesA to build character-version of seqAraw
+	log.value += "\nencoding phrases as single characters:\n"
+	var logadd = ""
+	var buffer = ""
+	for(var b=0; b < seqAraw.split(',').length; b++){
+		for(var c=0; c < seqAraw.split(',')[b].split(' ').length; c++){
+			for(var d=0; d < uniquephrasesA.length; d++) 
+				if(seqAraw.split(',')[b].split(' ')[c] == uniquephrasesA[d]){
+					buffer += elementsA[d]
+					logadd += uniquephrasesA[d] + ":" + elementsA[d] + "  "
+			} 
+		}buffer += ","; logadd += "/  "
+	}seqAraw = buffer.substring(0,buffer.length-1)
+
+	
+	//use uniquephrasesA to build character-version of seqAnewstring
+	var logadd2 = ""
+	var buffer2 = ""
+	for(var c=0; c < seqAnewstring.split(' ').length; c++){
+		for(var d=0; d < uniquephrasesA.length; d++) 
+			if(seqAnewstring.split(' ')[c] == uniquephrasesA[d]){
+				buffer2 += elementsA[d]
+				logadd2 += uniquephrasesA[d] + ":" + elementsA[d] + "  "
+			}
+	}seqAnewstring = buffer2
+
+	//build uniquephrasesB
+	for(var b=0; b < seqBraw.split(',').length; b++)
+		for(var c=0; c < seqBraw.split(',')[b].split(' ').length; c++){
+			var already = false
+			for(var d=0; d < uniquephrasesB.length; d++) if(seqBraw.split(',')[b].split(' ')[c] == uniquephrasesB[d]) already = true
+			if(!already) uniquephrasesB.push(seqBraw.split(',')[b].split(' ')[c])
+		}
+	//now use uniquephrasesB to build character-version of seqBraw
+	var logadd3 = ""
+	var buffer3 = ""
+	for(var b=0; b < seqBraw.split(',').length; b++){
+		for(var c=0; c < seqBraw.split(',')[b].split(' ').length; c++){
+			for(var d=0; d < uniquephrasesB.length; d++) 
+				if(seqBraw.split(',')[b].split(' ')[c] == uniquephrasesB[d]){
+					buffer3 += elementsB[d]
+					logadd3 += uniquephrasesB[d] + ":" + elementsB[d] + "  "
+
+				}
+		}buffer3 += ","; logadd3 += "/  "
+	}seqBraw = buffer3.substring(0,buffer3.length-1)
+
+	log.value += "[sources] "+logadd.substring(0,logadd.length-3) + "\n[targets] " + logadd3.substring(0,logadd3.length-3) + "\n[task] " + logadd2 + "\n"
+}
+
+var seqAnew = new Array; for(var a=0; a < seqAnewstring.length; a++) seqAnew[a] = seqAnewstring.charAt(a)
+
+
+
+//display input
+log.value += "\n"+seqAraw.split(',').length + " mappings given:\n"
+for(var a=0; a < seqAraw.split(',').length; a++) log.value += seqAraw.split(',')[a] + " -> " + seqBraw.split(',')[a] + "\n"
+log.value += "\ntask:\n"+ seqAnewstring + " -> ?\n"
+
+
+
+//find unique elements in seqAraw
+var seqAunique = new Array
+for(var n=0; n < seqAraw.length; n++){
+  var already=false; for(var k=0; k < seqAunique.length; k++) if(seqAraw.charAt(n) == seqAunique[k]) already=true
+  if(!already && seqAraw.charAt(n)!=',') seqAunique.push(seqAraw.charAt(n))
+}
+log.value += "\nunique source elements: "; for(var a=0; a < seqAunique.length; a++) log.value += seqAunique[a]+" "
+
+
+
+//check for elements in seqAnew that are not covered by elements in seqAraw - build those in with placeholders right at raw level
+var printed=false;
+for(var f=0; f < seqAnew.length; f++){var exists=false; 
+  for(var g=0; g < seqAunique.length; g++) if(seqAnew[f] == seqAunique[g]) exists=true   
+  if (!exists){
+  	seqAunique.push(seqAnew[f])
+    seqAraw += ","+seqAnew[f]
+    seqBraw += ",#"
+    if(!printed) log.value += " + uncovered task element(s): "
+    log.value += seqAnew[f]+" "
+    printed = true
+  } 
+}
+
+
+
+//expand seqA & seqB with LCM for each pairing
+var seqAexp = new Array
+var seqBexp = new Array
+log.value += "\n\nexpanding source- & target-sequences with respective couple-LCM:"
+
+for(var s=0; s < seqAraw.split(',').length; s++){
+  var a = seqAraw.split(',')[s].length; var b = seqBraw.split(',')[s].length;
+  var num1, num2; if(a > b){num1 = a; num2 = b;} else{num1 = b; num2 = a;}  
+  var i=0; var out=false; while(!out){ i++;
+    if ((num1 * i) % num2 == 0 || i > num2) out = true;
+  } var LCM = i * num1;
+ seqAexp[s] = ""
+ for(var z=0; z < a; z++) for(var r=0; r < (LCM / a); r++) seqAexp[s] += seqAraw.split(',')[s].charAt(z)
+ seqBexp[s] = ""
+ for(var z=0; z < b; z++)for(var r=0; r < (LCM / b); r++) seqBexp[s] += seqBraw.split(',')[s].charAt(z) 
+ 
+ log.value += "\n"+LCM+"\t"+seqAexp[s]
+ log.value += "\n\t"+seqBexp[s]
+}
+
+
+
+//fish raw content for seqAunique 
+var fishing = new Array
+for(var a=0; a < seqAunique.length; a++){ fishing[a]=""; 
+  for(var e=0; e < seqAexp.length; e++){ 
+  	for(var f=0; f < seqAexp[e].length; f++) if(seqAexp[e].charAt(f) == seqAunique[a]) fishing[a]+= seqBexp[e].charAt(f);
+    fishing[a]+="/";
+  }
+}//log.value += "\nraw fishing: "+fishing
+
+
+
+//refine content
+for(var x=0; x < fishing.length; x++){
+  var newfishingbuffer = ""
+  for(var y=0; y < fishing[x].split('/').length; y++) if(fishing[x].split('/')[y].length > 0){
+    var fishy = fishing[x].split('/')[y]
+    //log.value += fishy
+    var newfishy=""
+    var bufferchar = fishy.charAt(0)
+    var thiscount = 1
+    for(var v=1; v < fishy.length; v++){    
+      if(fishy.charAt(v) == bufferchar) thiscount++
+      else{
+        newfishy += thiscount+":"+bufferchar+","
+        bufferchar = fishy.charAt(v)
+        thiscount = 1}       
+    }
+    newfishy += thiscount+":"+bufferchar
+    newfishingbuffer += newfishy+"/"
+  }
+ fishing[x] = newfishingbuffer.substring(0,newfishingbuffer.length-1)
+}//log.value += "\nrefined fishing: "+fishing
+log.value += "\n\nall task-source-elements with their encoded targets:\n"
+for(var c=0; c < seqAunique.length; c++) log.value += seqAunique[c]+"   "+fishing[c]+"\n"
+
+
+
+//build raw-string for seqAnew
+var rawstring =""
+for(var f=0; f < seqAnew.length; f++) 
+	for(var g=0; g < seqAunique.length; g++)
+  		if(seqAnew[f] == seqAunique[g]) rawstring += fishing[g]+"+"
+rawstring = rawstring.substring(0,rawstring.length-1)
+log.value += "\nencoded targets concatenated according to task-sequence:\n"  
+log.value += seqAnewstring+" -> "+rawstring
+
+
+
+//find branch-count
+log.value += "\n\nmultiply targets with LCM amongst all targets LCM and with LCM for equal embedding of parallel targets:"
+var branchcount=1
+var temp = new Array
+var embedlcm = new Array
+for(var a=0; a < rawstring.split('+').length; a++){
+  var fact = 1; for(var x=1; x < rawstring.split('+')[a].split('/').length + 1; x++) fact *= x
+  branchcount *= fact
+  var already=false; for(var c=0; c < embedlcm.length; c++) if(rawstring.split('+')[a].split('/').length == embedlcm[c]) already=true
+  if(!already) embedlcm.push(rawstring.split('+')[a].split('/').length)
+  for(var b=0; b < rawstring.split('+')[a].split('/').length; b++) temp.push(rawstring.split('+')[a].split('/')[b])
+} embedlcm.sort() //log.value += "\n"+embedlcm
+log.value += "\nbranches: "+branchcount
+
+
+
+//find LCM of embedding
+var maxlcmE=1; for(var z=0; z < embedlcm.length; z++) maxlcmE *= embedlcm[z]
+var outE=false; var z=0;
+while(!outE){
+    z += embedlcm[embedlcm.length-1]
+    var badE=false; for(var d=0; d < embedlcm.length-1; d++) if(z % embedlcm[d] != 0) badE = true
+    if(!badE) outE = true
+    if(z >= maxlcmE) outE = true
+}var LCMembed = z 
+log.value += "\nembedding LCM: "+LCMembed
+
+
+
+//find lengths
+var thislength = 0; var lengths = new Array
+for(var a=0; a < temp.length; a++){
+  thislength = 0
+  for(var b=0; b < temp[a].split(',').length; b++){
+    thislength += parseInt(temp[a].split(',')[b].split(':')[0])   
+  }
+  var already = false
+  for(var c=0; c < lengths.length; c++) if(thislength == lengths[c]) already=true
+  if (!already) lengths.push(thislength)
+} lengths.sort() //log.value += "\n "+lengths
+
+
+
+//find LCM of lengths
+var maxlcm = 1; for(var i=0; i < lengths.length; i++) maxlcm *= lengths[i]
+var out=false; var i=0
+while(!out){
+    i += lengths[lengths.length-1]
+    var bad=false; for(var d=0; d < lengths.length-1; d++) if(i % lengths[d] != 0) bad = true
+    if(!bad) out = true
+    if(i >= maxlcm) out = true
+}var LCM = i; 
+log.value += "\ntargets LCM: "+LCM
+
+
+
+
+//with LCM and branches go trough again
+
+//build through-multiplied string
+var mainstring = ""
+for(var a=0; a < rawstring.split('+').length; a++){ //for each new letter
+  var oldfactor = LCMembed / rawstring.split('+')[a].split('/').length; var factor = 0
+  for(var b=0; b < rawstring.split('+')[a].split('/').length; b++){ //for each backslash
+   
+    var addup=0; for(var c=0; c < rawstring.split('+')[a].split('/')[b].split(',').length; c++){ //for each komma
+      addup += parseInt(rawstring.split('+')[a].split('/')[b].split(',')[c].split(':')[0])
+    }factor = oldfactor * (LCM / addup)
+    
+    for(var c=0; c < rawstring.split('+')[a].split('/')[b].split(',').length; c++){ //for each komma again to rebuild
+      mainstring += parseInt(rawstring.split('+')[a].split('/')[b].split(',')[c].split(':')[0]) * factor 
+                   +":"+ rawstring.split('+')[a].split('/')[b].split(',')[c].split(':')[1] +","
+    }   
+   mainstring = mainstring.substring(0,mainstring.length-1) //cut last char away
+   mainstring += "/"
+  }mainstring = mainstring.substring(0,mainstring.length-1)
+   mainstring += "+"
+}mainstring = mainstring.substring(0,mainstring.length-1)
+log.value += "\n\nencoded target-sequence multiplied through:\n"
+log.value += seqAnewstring+" -> "+mainstring+"\n"
+for(var a=0; a < mainstring.split('+').length; a++) log.value += seqAnewstring.charAt(a) + "\t" + mainstring.split('+')[a] +"\n"
+
+
+var storage = new Array
+//make code-internal mapping to build branches-map
+log.value += "\nmap encoded target-sequence-packages upon chars to perform branch-building (map back later):\n"
+var mapsource = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+var simple =""; var count=0
+
+for(var a=0; a < mainstring.split('+').length; a++){
+  for(var b=0; b < mainstring.split('+')[a].split('/').length; b++){
+    storage.push(mainstring.split('+')[a].split('/')[b])
+    simple += mapsource.charAt(count)
+    log.value += " ("+mapsource.charAt(count)+") "+ mainstring.split('+')[a].split('/')[b]
+    count++
+  }simple += "+"; log.value += "\n"
+}simple = simple.substring(0,simple.length-1)
+log.value += "> "+simple+"\n"
+
+
+//build simple tree
+log.value += "\nexpand each package factorially in matrix to cover all possible constellations and allow path-navigation through it:\n"
+
+//build matrix & sys
+var maxfact = 0
+for(var a=0; a < simple.split('+').length; a++) if(simple.split('+')[a].length > maxfact) maxfact = simple.split('+')[a].length
+for(var b = maxfact-1; b > 0; b--) maxfact *= b
+
+var data = new Array //String[][] data = new String[split(simple,'+').length][maxfact];
+var sys = new Array //int[] sys = new int[split(simple,'+').length];
+
+for(var e=0; e < simple.split('+').length; e++){
+	var thisbundle = simple.split('+')[e]
+	//log.value += "\n" + thisbundle + " "+ thisbundle.length
+	
+	var drill = [""]
+	for(var h=0; h < thisbundle.length; h++){
+		var insert = thisbundle.charAt(h)
+		var collect = new Array
+
+		for(var a=0; a < drill.length; a++){	
+			var drillpiece = new Array
+			for(var b=0; b < drill[a].length; b++) drillpiece.push(drill[a].charAt(b))
+	
+			for(var d=0; d < drill[a].length +1; d++){	
+				var copy = new Array; for(var f=0; f < drillpiece.length; f++) copy[f] = drillpiece[f]
+				copy.splice(d,0,insert)	
+				var collectbuff = copy.toString().split(',').join('')	
+				collect.push(collectbuff)			
+			}	
+		} 
+		drill = collect //handover for next round
+	} 
+	data[e] = collect
+	sys[e] = collect.length
+}
+
+
+//show matrix
+
+log.value += "\n"
+for(var a=0; a < sys.length; a++) log.value += sys[a]+"\t"
+log.value += "\n"
+
+for(var b=0; b < maxfact; b++){ 
+	for(var c=0; c < data.length; c++){	
+		if(data[c][b] == null) log.value += "-\t"
+		else log.value += data[c][b]+"\t"	
+	}
+	log.value += "\n"
+}
+
+//build branches of simpletree
+	//show start & end path-nav
+var config = new Array; for(var a=0; a < sys.length; a++) config[a] = 1
+var sysbuff = " "; for(var c=0; c < sys.length; c++) sysbuff += sys[c] + " ";
+var configbuff = " "; for(var c=0; c < config.length; c++) configbuff += config[c] + " ";
+log.value += "\nAll branches from starting path: ["+configbuff+"] to ending path: ["+sysbuff+"] through matrix:\n\n"
+
+	//navigate from start to end path by pushing 1 in on left side (of config) every step and pinging it through governed by sys
+var simpletree = new Array
+var pos = 0
+
+for(var a=0; a < branchcount; a++){
+	var buff1 = "" 
+	var buff2 = ""
+	for(var c=0; c < config.length; c++){ 
+		buff1 += config[c] + " "
+    	buff2 += data[c][config[c]-1] + "+"
+  }
+  buff2 = buff2.substring(0,buff2.length - 1) 
+  log.value += (a+1) + " : " + buff1 + ": " + buff2 + "\n"
+  simpletree[a] = buff2
+
+  for(var b=0; b < sys.length; b++) if(config[pos] == sys[pos]) {config[pos]=1; pos++;} 
+  if(pos < sys.length) config[pos]++
+  pos = 0
+}//log.value += "\n"+simpletree
+
+log.value += "\nall branches mapped back onto code-internal code :) stripped off +'s, /'s and ,'s and merged bundles of same char-type that were next to each other:\n"
+var realtree = new Array
+
+for(var x=0; x < simpletree.length; x++){
+  var thisbranch = ""
+  for(var a=0; a < simpletree[x].split('+').length; a++) thisbranch += simpletree[x].split('+')[a]
+  var thiscoded = ""
+  for(var a=0; a < thisbranch.length; a++){
+    var b=0; while(thisbranch.charAt(a) != mapsource.charAt(b)) b++
+    thiscoded += storage[b].split(',').join(' ') + " "  
+  }
+  thiscoded = thiscoded.substring(0,thiscoded.length - 1)
+  //println(x+": "+thiscoded);
+  //println(split(thiscoded,' '));
+
+  //add equal chars next to each other
+  var thisnumb = parseInt(thiscoded.split(' ')[0].split(':')[0])
+  var prevchar = "" 
+  var thischar = ""
+  var clearedbranch = ""
+
+  for(var a=1; a < thiscoded.split(' ').length; a++){
+    prevchar = thiscoded.split(' ')[a-1].split(':')[1]
+    thischar = thiscoded.split(' ')[a].split(':')[1]
+    if(thischar == prevchar) thisnumb += parseInt(thiscoded.split(' ')[a].split(':')[0])
+    else{
+      clearedbranch += thisnumb + ":" + prevchar + " "
+      //println(thisnumb+":"+prevchar); 
+      thisnumb = parseInt(thiscoded.split(' ')[a].split(':')[0])
+    }
+  }
+  clearedbranch += thisnumb + ":" + thischar
+  realtree.push(clearedbranch)
+}
+
+	//display realtree
+for(var a=0; a < realtree.length; a++) log.value += "\n"+(a+1) + " : " + realtree[a]
+
+	//determine target-seq-length based on given ratios or use manual input
+if(document.getElementById("targetlength").value == "auto"){
+	var factor = 0
+	for(var a=0; a < seqAraw.split(',').length; a++) factor += seqBraw.split(',')[a].length / seqAraw.split(',')[a].length
+	factor = (factor / seqAraw.split(',').length) * seqAnew.length
+	var outcomelength = Math.round(factor)
+	log.value += "\n\nlength of target-sequence determined by averaging given source-target-ratios: "+outcomelength+"\n"
+} else {
+	var outcomelength = parseInt(document.getElementById("targetlength").value)
+	log.value += "\n\nlength of task-target as manually indicated: "+outcomelength+"\n"
+}
+
+//from here through all branches
+
+	//find maxsum
+var maxsum = 0
+for(var c=0; c < realtree.length; c++){
+  var numbers = new Array
+  for(var a=0; a < realtree[c].split(' ').length; a++){
+    numbers.push(parseInt(realtree[c].split(' ')[a].split(':')[0]))
+  }
+  numbers.sort().reverse()
+  var sum = 0
+  for(var b = 0; b < outcomelength; b++) sum += numbers[b]
+  if (sum > maxsum) maxsum = sum
+}
+log.value += "\nmaximum sum of the top "+outcomelength+" bundle-numbers across all branches: "+maxsum
+
+	//store branches that have maxsum
+var maxsumstorage = new Array
+
+for(var c=0; c < realtree.length; c++){
+  var numbers = new Array
+  for(var a=0; a < realtree[c].split(' ').length; a++){
+    numbers.push(parseInt(realtree[c].split(' ')[a].split(':')[0]))
+  }
+  numbers.sort().reverse()
+  var sum = 0
+  for(var b = 0; b < outcomelength; b++) sum += numbers[b]
+  if(sum == maxsum) maxsumstorage.push(realtree[c])
+}
+log.value += ", occuring in these "+maxsumstorage.length+" branches:\n"
+for(var y=0; y < maxsumstorage.length; y++) log.value += "\n" + y + ": " + maxsumstorage[y]
+log.value += "\n\ngo through each one...\n\n\n"
+
+
+
+	//go through branches in maxsumstorage and extract the groups of outcomelength...
+var collectfinalresults = new Array
+
+for(var d=0; d < maxsumstorage.length; d++){
+
+   var numbers = new Array
+   for(var a=0; a < maxsumstorage[d].split(' ').length; a++){
+	  numbers.push(parseInt(maxsumstorage[d].split(' ')[a].split(':')[0]))
+   }
+   numbers.sort().reverse()
+  
+	log.value += "\ncurrently under investigation (" + (d+1) + "/" + maxsumstorage.length + "): " + maxsumstorage[d]
+	var bundlenumbers=""; for(var v=0; v < numbers.length; v++) bundlenumbers += numbers[v] + " "
+	log.value += "\nbundle-numbers sorted:  " + bundlenumbers
+
+	var startshere = 0; while(numbers[startshere] != numbers[outcomelength-1]) startshere++
+	var endshere = startshere; while(numbers[endshere+1] == numbers[outcomelength-1]) endshere++
+	var finalelements = endshere - (startshere-1)
+	var underwater = outcomelength - startshere
+	log.value += "\nstartshere: "+startshere+" / endshere: "+endshere+" / finalelements: "+finalelements+" / underwater: "+underwater
+  
+	//formula for subgroups
+	var n = finalelements;
+	var nfac = 1; for(var x=n; x > 0; x--) nfac *= x
+	var k = underwater;
+	var kfac = 1; for(var x=k; x > 0; x--) kfac *= x
+	var nminuskfac = 1; for(var x = n-k; x > 0; x--) nminuskfac *= x
+	var result = nfac / (nminuskfac * kfac)
+	log.value += "\nform the " + result + " different groups of " + underwater + ", that can be formed with the " + finalelements + " final elements:"
+
+	var finalelementsmatrix = new Array
+  
+	var scheme = new Array
+	for(var n=1; n < Math.pow(2,finalelements); n *= 2) scheme.push(n)
+	scheme.reverse()
+
+	for(var a=0; a < Math.pow(2,finalelements); a++){ 
+   		//workaround for binary(int) function in java 
+		var tobin = a
+		var buildbin = ""	  
+		for(var p=0; p < scheme.length; p++){
+  			if(tobin >= scheme[p]){ buildbin += '1'; tobin -= scheme[p] }
+  			else buildbin += '0'
+		}
+    	var bin = buildbin // just binary(a) in java
+		var ones = 0
+		for(var b=0; b < bin.length; b++) if(bin.charAt(b) == '1') ones++
+		var buffer = ""
+		if(ones == underwater){
+    		while(bin.length < finalelements) bin = "0" + bin
+    		finalelementsmatrix.push(bin) 
+  		}
+	}
+
+	for(var w=0; w < finalelementsmatrix.length; w++) log.value += "\n" + w + ": " + finalelementsmatrix[w]
+	log.value += "\n\nembed that into an on/off scheme for the whole branch:\n"
+	var matrix = new Array
+
+	for(var h=0; h < result; h++){
+  		var thismatrix = ""
+  		var marker = 0
+  		for(var f=0; f < maxsumstorage[d].split(' ').length; f++){ 
+    		var insolelytop =false; for(var g=0; g < startshere; g++) if(parseInt(maxsumstorage[d].split(' ')[f].split(':')[0]) == numbers[g]) insolelytop = true
+    		if(insolelytop) thismatrix += '1'
+    		else
+      			if(parseInt(maxsumstorage[d].split(' ')[f].split(':')[0]) == numbers[outcomelength-1]){
+        			if(finalelementsmatrix[h].charAt(marker) == '1') thismatrix += '1'
+        			else thismatrix += '0'
+        			marker++ 
+      				}
+      			else thismatrix += '0'
+  		}
+  	matrix.push(thismatrix)
+	}
+	for(var w=0; w < matrix.length; w++) log.value += "\n" + w + ": " + matrix[w]
+
+
+
+	//fill matrix
+	var filledmatrix = new Array
+	for(var p=0; p < result; p++){
+  		var thisfilledbranch = ""
+  		for(var q=0; q < matrix[p].length; q++) if(matrix[p].charAt(q)=='1') thisfilledbranch += maxsumstorage[d].split(' ')[q] + " "
+  		filledmatrix.push(thisfilledbranch.substring(0,thisfilledbranch.length - 1))
+	}
+	log.value += "\n\napply the on/off scheme(s) to the branch (=compression):\n"
+	for(var w=0; w < filledmatrix.length; w++) log.value += "\n" + w + ": " + filledmatrix[w]
+
+	for(var r=0; r < filledmatrix.length; r++){ 
+  		var already = false
+  		for(var s=0; s < collectfinalresults.length; s++) if(collectfinalresults[s] == filledmatrix[r]) already = true
+  		if(!already) collectfinalresults.push(filledmatrix[r])
+	}
+
+	if(maxsumstorage.length > 1) log.value += "\n\n- - - -\n"
+	
+}
+
+
+log.value += "\n\ncollected compressed branches (duplicates removed):\n"
+for(var w=0; w < collectfinalresults.length; w++) log.value += "\n" + w + ": " + collectfinalresults[w]
+
+log.value += "\n\nleaving only the characters gives equally valid final result(s):\n"
+var storeresults = new Array
+for(var t=0; t < collectfinalresults.length; t++){  
+  var buffer = ""
+  for(var u=0; u < collectfinalresults[t].split(' ').length; u++) buffer += collectfinalresults[t].split(' ')[u].split(':')[1]
+  log.value += "\n" + (t+1) + ":  " + buffer
+  storeresults.push(buffer)
+  if(!phrases) results.value += (t+1) + "  " + seqAnewstring + " -> " + buffer + "\n"
+}
+
+if(phrases){
+	log.value += "\n\ndecoding characters back to their respective phrases. the new source sequence [" + document.getElementById("task").value + "] corresponds with these target sequence(s):\n\n"
+	results.value += "[" + document.getElementById("task").value + "] leads to:\n\n"
+	
+	for(var t=0; t < storeresults.length; t++){
+		var buffer = ""
+		for(var u=0; u < storeresults[t].length; u++)
+			for(var v=0; v < elementsB.length; v++)
+				if(elementsB[v] == storeresults[t].charAt(u)) buffer += uniquephrasesB[v]+" "
+		log.value += (t+1) + ": " + buffer + "\n"
+		results.value += (t+1) + ": " + buffer + "\n"
+	}
+}
+log.value += "\n\n- - - - - - - -\n\n"
+results.value += "\n- - - - - - - -\n\n"
+
+
+}
+</script>
+<body>
+<p class="style3"><a href="index.html">start</a> | <a href="subgroups.html">subgroups</a> | <a href="patterns.html">patterns</a> | mapping</p>
+<p>&nbsp;</p>
+<table width="80%" border="0" align="center">
+  <tr>
+    <td width="46%"><p class="style1"><span class="style7">mapping </span><span class="style8">sequences</span></p>
+      <p class="style27"> Version 2 / April 26, 2012 / Benjamin Aaron Degenhart<br />
+ can you find the mistake in <a href="mapping-old.html">Version 1</a>? :)</p>
+      <p class="style27">&nbsp;</p>
+      <p class="style1">The question that this algorithm answers is; given the sequence of A1 is coupled with B1 and A2 is coupled with B2, what is B3 going to be if we know A3? <br />
+      Or differently: What is the result if we send the sequence A3 through a mapping process that has been informed by the coupling of A1 with B1 and the coupling of A2 with B2?</p>
+      <p class="style1">You can enter one, two or more couples. The number of source sequences has to be the same as the number of target sequences.</p>
+      <p class="style1">&nbsp;</p>
+      <p class="style1"> I thought about what an artificial creativity would need to be able to do. I came to think of creativity as recombining existing elements so that the combination becomes an element in itself. The exponential growth of possible combinations with increasing elements requires better and better ways to choose with branch to run down. Human minds can use metaphors to test branches, by 'mimicing' the structural information from successful combinations in other domains. The metaphor establishes a mapping between a source- and a target level. Changes in either one of them will then be interpreted in the other one. 'Artificial creativity' needs a way to pull in structural information from other domains to test possible combinations in a pool of elements more effectively - a digital metaphor? It has to go 'collect' graph-navigational data from targets in other domains. By making the mapping-process complex enough the source can be mapped upon any branch in any target - of course it is of interest to choose targets first that are  likely to seed potent structural information into the source.</p>
+      <p class="style1">This algorithm is restricted to monochronic sequences and requires that the data is already processed in a way where the elements are  coming from a pool that  scopes the totality of its domain. Things like &quot;pasta&quot; and &quot;noodles&quot;  have to be unified/matched.</p>
+      <p class="style1">In this simplified <a href="mapping.html?getup shower coffee emails,coffee teethbrushing emails gosleep-heatwater boilpasta warmupsauce putonplate eat,cutbread addbutter addcheese putonplate eat-getup coffee emails gosleep">example with phrases</a>  are two source-sequences from the category of &lt;daily routines&gt; and two target-sequences from the category of &lt;making food&gt;. The first coupling says &quot;these 4 steps i go through every morning are like these 5 steps i go through for making pasta&quot;  and the second coupling says &quot;these 4 steps i go through every evening are like these 5 steps i go through when eating a cheese sandwich (for whatever reason i choose to compare these two levels). Then i go wild in my daily routine and find myself performing a new sequence of 4 steps. I wonder; how would this new chain of events be like if it would be for making food?? Most results will be complete nonsense or impossible to apply to actual food making - but maybe, maybe there's one that pokes me towards a new recipe, a  combination that hasn't been tested before.</p>
+      <p class="style1">The result in that example don't really make sense though, when interpreted in the context of food, i admit. I will put up a better phrase-example when i think of one :)</p>
+    <p class="style1">&nbsp;</p></td>
+    <td width="8%"><p align="left" class="style1">&nbsp;</p>
+      <p align="left" class="style1">&nbsp;</p>    </td>
+    <td width="46%"><p align="left" class="style1">given source sequence(s):
+        </p>
+      <p align="left" class="style1">
+        <input name="seqAinput" type="text" id="seqAinput" value="DFB,FAD,BF" size="48" width="260"/>
+      </p>
+      <p align="left" class="style1">given target sequence(s):      </p>
+      <p align="left" class="style1">
+        <input name="seqBinput" type="text" id="seqBinput" value="acre,brncd,erfd" size="48" width="260"/>
+      </p>
+      <p align="left" class="style1">new source sequence:      </p>
+      <p align="left" class="style1">
+        <input name="task" type="text" id="task" value="AFD" size="26" width="160" />
+      </p>
+      <p align="left" class="style1">corresponding target sequence: ?</p>
+      <p align="left" class="style1">desired length of new target: 
+        <input name="targetlength" type="text" id="targetlength" value="auto" size="6" />
+      </p>
+      <p align="left" class="style1">&nbsp;</p>
+      <p align="left" class="style1">
+        <input type="submit" name="go" id="go" value="compute" onclick="thefunction(form)"/>
+        <a href="mapping.html"><span class="style10">reset</span></a> </p>
+      <p align="left" class="style1">&nbsp;</p>
+      <p align="left" class="style1">results:</p>
+      <p align="left" class="style1">
+      <textarea name="resultsfield" cols="48" rows="8" id="resultsfield"></textarea>
+    </p>
+    <p align="left" class="style1">log:</p>
+    <p align="left" class="style1">
+      <textarea name="logfield" cols="48" rows="24" id="logfield"></textarea>
+    </p></td>
+  </tr>
+  <tr>
+    <td colspan="3" bgcolor="#FFFFFF"><p class="style9">How it works (shown with the prefilled example):</p>
+      <p class="style1">3 couples given:<br />
+  DFB -&gt; acre<br />
+  FAD -&gt; brncd<br />BF -&gt; erfd</p>
+      <p class="style1">task:<br />
+        AFD -&gt; ?</p>
+      <p class="style1">Using the average of the ratio in the given couples, the lenght of the task-target-sequence can be calculated by the rule of proportion:</p>
+      <p class="style1">((4/3) + (5/3) + (4/2)) /3 = x / 3 </p>
+      <p class="style1">-&gt; x = <strong>5</strong></p>
+      <p class="style1">Find LCM (least common multiple) for each coupling and multiply  each element with the factor of [own seq.length / couple-lcm] so that both sequences in the coupling have the same lengths. </p>
+      <p class="style1">LCM of 3 &amp; 4 is 12:</p>
+      <table width="120" border="0">
+        <tr>
+          <td class="style1"><span class="style14">D</span></td>
+          <td class="style1"><span class="style14">D</span></td>
+          <td class="style1"><span class="style14">D</span></td>
+          <td class="style1"><span class="style14">D</span></td>
+          <td class="style1"><span class="style13">F</span></td>
+          <td class="style1"><span class="style13">F</span></td>
+          <td class="style1"><span class="style13">F</span></td>
+          <td class="style1"><span class="style13">F</span></td>
+          <td class="style1"><span class="style16">B</span></td>
+          <td class="style1"><span class="style16">B</span></td>
+          <td class="style1"><span class="style16">B</span></td>
+          <td class="style1"><span class="style16">B</span></td>
+        </tr>
+        <tr>
+          <td class="style1"><span class="style14">a</span></td>
+          <td class="style1"><span class="style14">a</span></td>
+          <td class="style1"><span class="style14">a</span></td>
+          <td class="style1"><span class="style14">c</span></td>
+          <td class="style1"><span class="style13">c</span></td>
+          <td class="style1"><span class="style13">c</span></td>
+          <td class="style1"><span class="style13">r</span></td>
+          <td class="style1"><span class="style13">r</span></td>
+          <td class="style1"><span class="style16">r</span></td>
+          <td class="style1"><span class="style16">e</span></td>
+          <td class="style1"><span class="style16">e</span></td>
+          <td class="style1"><span class="style16">e</span></td>
+        </tr>
+      </table>
+      <p class="style1"> LCM of 3 &amp; 5 is 15:</p>
+      <table width="150" border="0">
+        <tr>
+          <td class="style1"><span class="style13">F</span></td>
+          <td class="style1"><span class="style13">F</span></td>
+          <td class="style1"><span class="style13">F</span></td>
+          <td class="style1"><span class="style13">F</span></td>
+          <td class="style1"><span class="style13">F</span></td>
+          <td class="style1"><span class="style12">A</span></td>
+          <td class="style1"><span class="style12">A</span></td>
+          <td class="style1"><span class="style12">A</span></td>
+          <td class="style1"><span class="style12">A</span></td>
+          <td class="style1"><span class="style12">A</span></td>
+          <td class="style1"><span class="style14">D</span></td>
+          <td class="style1"><span class="style14">D</span></td>
+          <td class="style1"><span class="style14">D</span></td>
+          <td class="style1"><span class="style14">D</span></td>
+          <td class="style1"><span class="style14">D</span></td>
+        </tr>
+        <tr>
+          <td class="style1"><span class="style13">b</span></td>
+          <td class="style1"><span class="style13">b</span></td>
+          <td class="style1"><span class="style13">b</span></td>
+          <td class="style1"><span class="style13">r</span></td>
+          <td class="style1"><span class="style13">r</span></td>
+          <td class="style1"><span class="style12">r</span></td>
+          <td class="style1"><span class="style12">n</span></td>
+          <td class="style1"><span class="style12">n</span></td>
+          <td class="style1"><span class="style12">n</span></td>
+          <td class="style1"><span class="style12">c</span></td>
+          <td class="style1"><span class="style14">c</span></td>
+          <td class="style1"><span class="style14">c</span></td>
+          <td class="style1"><span class="style14">d</span></td>
+          <td class="style1"><span class="style14">d</span></td>
+          <td class="style1"><span class="style14">d</span></td>
+        </tr>
+      </table>
+      <p class="style1">LCM of 2 &amp; 4 is 4:</p>
+      <table width="60" border="0">
+        <tr>
+          <td class="style1">B</td>
+          <td class="style1">B</td>
+          <td class="style1"><span class="style13">F</span></td>
+          <td class="style1"><span class="style13">F</span></td>
+        </tr>
+        <tr>
+          <td class="style1">e</td>
+          <td class="style1">r</td>
+          <td class="style1"><span class="style13">f</span></td>
+          <td class="style1"><span class="style13">d</span></td>
+        </tr>
+      </table>
+      <p class="style1">Find out if there are elements in the new source sequence that are not present in any given source sequence (not the case in this example) - if so (e.g. &quot;X&quot;)  add &quot;,X&quot; to the source input and &quot;,#&quot; to the target input; code-internally it will be treated as another coupling whereas we know it's a placeholder when &quot;#&quot; appears in the new target result.</p>
+      <p class="style1">Extract the corresponding target-elements for each element in the new source sequence <span class="style11">A</span><strong><span class="style13">F</span><span class="style14">D</span></strong> and rewrite it in encoded form:</p>
+    <p class="style1"><span class="style12">A</span>: <span class="style12">r n n n c</span> [1:r,3:n,1:c]</p>
+    <p class="style1"><span class="style13">F</span>: <span class="style13">c c r r <span class="style16">/</span> b b b r <span class="style16">/</span> f d </span> [2:c,2:r/3:b,1:r/1:f,1:d]</p>
+    <p class="style1"><span class="style14">D</span>: <span class="style14">a a a c <span class="style16">/</span> c c d d d</span> [3:a,1:c/2:c,3:d]</p>
+    <p class="style1">Concatenate encoded target-string:</p>
+    <p class="style1">AFD -&gt;  <span class="style12">1:r,3:n,1:c</span> + <span class="style13">2:c,2:r<span class="style16">/</span>3:b,2:r<span class="style16">/</span>1:f,1:d</span> + <span class="style14">3:a,1:c<span class="style16">/</span>2:c,3:d</span></p>
+    <p class="style1">&nbsp;</p>
+    <p class="style1">If stopped at this time, the target-sequence for the task would be: <span class="style12">rnc</span><span class="style13">crbrfd</span><span class="style14">accd</span>, clearly too long compared to the target-length of 5 that is aimed for as calculated above. So it needs to be compressed! That brings up issues;  single characters can't be splitted any further - so which is the best selection that is allowed to survive the compression? <br />
+      It needs to be assured that every character from the target-element-pool get's the correct chance to appear in the final target-sequence after the compression. </p>
+    <p class="style1">Hence each target-character-bundle (&quot;1:r&quot; is the first one, &quot;3:n&quot; the second one, ...,&quot;3:d&quot; the last one) is now going to be multiplied with specific factors that will ensure the correct probability of their compression-survival.</p>
+    <p class="style1">First it needs to be compensated for the fact that the packages (=all bundles from each read-in; &quot;1:r,3:n,1:c&quot; is the first one, &quot;2:c,2:r&quot; the second one, ..., &quot;2:c,3:d&quot; the last one) where read-in from the given couples that where  treated with different LCM's. So determine the LCM (with which they'll be equalized) of all packages  requires to look at the sums of their containing characters:</p>
+    <p class="style1"><span class="style12">5</span> + <span class="style13">4<span class="style16">/</span>5<span class="style16">/</span>2</span> + <span class="style14">4<span class="style16">/</span>5</span></p>
+    <p class="style1">The three different package-sums of 2, 4 and 5 give  a LCM of <strong>20</strong>. Enforce that on each package in the target-string  (divide package-sum by LCM and multiply each bundle with the resulting factor):</p>
+    <p class="style1"><span class="style12"> <span class="style18">(20/5) *</span> (1:r,3:n,1:c)</span> + <span class="style18">(20/4) *</span> <span class="style13">(2:c,2:r) <span class="style16">/</span> <span class="style18">(20/5) *</span> (3:b,2:r) <span class="style16">/ <span class="style18">(20/2) * </span></span>(1:f,1:d)</span> + <span class="style18">(20/4) * </span><span class="style14">(3:a,1:c)<span class="style16"> / <span class="style18">(20/5) *</span> </span>(2:c,3:d)</span></p>
+    <span class="style1">-&gt; <span class="style12">4:r,12:n,4:c</span> + <span class="style13">10:c,10:r<span class="style16">/</span>12:b,8:r<span class="style16">/</span>10:f,10:d</span> + <span class="style14">15:a,5:c<span class="style16">/</span>8:c,12:d</span></span>
+    <p class="style1">Now it needs to be compensated for the disproportionate weight  that &quot;multibooked&quot; source-elements (like the <span class="style13">F</span> has read-in packages from 3 different targets) bring in - look at all multibook-numbers:</p>
+    <p class="style1"><span class="style12">1</span>  + <span class="style13">3</span> + <span class="style14">2</span></p>
+    <p class="style1">The LCM of these is <strong>6</strong>. Treat the target-string with that; non-multibooked receive full LCM multiplication whereas the multibooked ones receive LCM / &quot;multibookedness&quot;</p>
+    <p class="style1"><span class="style12"> <span class="style18">(6/1) *</span> (4:r,12:n,4:c)</span> + <span class="style18">(6/3) *</span> <span class="style13">(10:c,10:r<span class="style16">/</span>12:b,8:r<span class="style16">/</span>10:f,10:d)</span> + <span class="style18">(6/2) *</span> <span class="style14">(15:a,5:c<span class="style16">/</span>8:c,12:d)</span></p>
+    <span class="style1"><span class="style12"><span class="style16">-&gt;</span> 24:r,74:n,24:c</span> + <span class="style13">20:c,20:r/24:b,16:r/20:f,20:d</span> + <span class="style14">45:a,15:c/24:c,36:d</span></span>
+    <p class="style1">Now  it is ensured that each character has given the correct weight. One could go ahead run the compression. However; since equal treatment has been given, it can be looked at nothing but the bundles now. What becomes obvious  is that in this case two bundles of c would have to be merged before the compression takes place - which significantly increases the chances of c to survive the compression:</p>
+    <p class="style1">24:r 74:n <span class="style18">24:c 20:c </span>20:r 24:b 16:r 20:f 20:d 45:a <span class="style18">15:c 24:c </span>36:d</p>
+    <p class="style1">-&gt; 24:r 74:n <strong>44:c </strong>20:r 24:b 16:r 20:f 20:d 45:a<strong> 39:c </strong>36:d</p>
+    <p class="style1">As the merging depends on which bundles lie next to each other, it becomes obvious that the constellation of the packages in the multibooked source-elements matters fundamentally. Also the overall arrangements of the packages is crucial because the order before the compression is the same after the compression, even so with fewer elements. So, no other way than running through all possible arrangements (=permutations, n!) of the multibooked source-elements.</p>
+    <p class="style1">To do that i reduce the packages in the uncompressed target-string to single characters; a code-internal mapping:</p>
+    <p class="style1"><span class="style12"><span class="style16">(A) </span>24:r,72:n,24:c</span><br />
+      <span class="style13"><span class="style16">(B) </span>20:c,20:r <span class="style16">(C) </span>24:b,16:r <span class="style16">(D) </span>20:f,20:d</span><br />
+      <span class="style16">(E) </span><span class="style14">45:a,15:c <span class="style16">(F) </span>24:c,36:d</span><br />
+</p>
+    <p class="style1">-&gt; <span class="style12">A</span>+<span class="style13">BCD</span>+<span class="style20">EF</span> is what the encoded target-string looks now encoded :)</p>
+    <p class="style1">Build a matrix with the packages horizontally and all their possible arrangements (my code to create all permutations is interesting (or funny) too, but won't be explained here) vertically:</p>
+    <table width="80" border="0">
+      <tr>
+        <td class="style1"><div align="center" class="style18">1!</div></td>
+        <td class="style1"><div align="center" class="style18">3!</div></td>
+        <td class="style1"><div align="center" class="style18">2!</div></td>
+      </tr>
+      <tr>
+        <td class="style1"><span class="style12">A</span></td>
+        <td class="style1"><span class="style13">DCB</span></td>
+        <td class="style1"><span class="style14">FE</span></td>
+      </tr>
+      <tr>
+        <td class="style1">&nbsp;</td>
+        <td class="style1"><span class="style13">CDB</span></td>
+        <td class="style1"><span class="style14">EF</span></td>
+      </tr>
+      <tr>
+        <td class="style1">&nbsp;</td>
+        <td class="style1"><span class="style13">CBD</span></td>
+        <td class="style1">&nbsp;</td>
+      </tr>
+      <tr>
+        <td class="style1">&nbsp;</td>
+        <td class="style1"><span class="style13">DBC</span></td>
+        <td class="style1">&nbsp;</td>
+      </tr>
+      <tr>
+        <td class="style1">&nbsp;</td>
+        <td class="style1"><span class="style13">BDC</span></td>
+        <td class="style1">&nbsp;</td>
+      </tr>
+      <tr>
+        <td class="style1">&nbsp;</td>
+        <td class="style1"><span class="style13">BCD</span></td>
+        <td class="style1">&nbsp;</td>
+      </tr>
+    </table>
+    <p class="style1">To build a tree from that matrix i run through all 1! * 3! * 2! = <strong>12</strong>  paths between the first [1 1 1] (=A+DCB+FE) and the last [1 6 2] (=A+BCD+EF) and collect the stored elements on the way (my code for that is interesting (or funny) too but won't be explained here).</p>
+    <table width="163" border="0">
+      <tr>
+        <td width="23"><span class="style1">1</span></td>
+        <td width="52"><span class="style21">1 1 1</span></td>
+        <td width="12"><span class="style22">A</span></td>
+        <td width="35"><span class="style23">DCB</span></td>
+        <td width="19"><span class="style24">FE</span></td>
+        </tr>
+      <tr>
+        <td><span class="style1">2</span></td>
+        <td><span class="style21">1 2 1</span></td>
+        <td><span class="style22">A</span></td>
+        <td><span class="style23">CDB</span></td>
+        <td><span class="style24">FE</span></td>
+        </tr>
+      <tr>
+        <td><span class="style1">3</span></td>
+        <td><span class="style21">1 3 1</span></td>
+        <td><span class="style22">A</span></td>
+        <td><span class="style23">CBD</span></td>
+        <td><span class="style24">FE</span></td>
+        </tr>
+      <tr>
+        <td><span class="style1">4</span></td>
+        <td><span class="style21">1 4 1</span></td>
+        <td><span class="style22">A</span></td>
+        <td><span class="style23">DBC</span></td>
+        <td><span class="style24">FE</span></td>
+        </tr>
+      <tr>
+        <td><span class="style1">5</span></td>
+        <td><span class="style21">1 5 1</span></td>
+        <td><span class="style22">A</span></td>
+        <td><span class="style23">BDC</span></td>
+        <td><span class="style24">FE</span></td>
+        </tr>
+      <tr>
+        <td><span class="style1">6</span></td>
+        <td><span class="style21">1 6 1</span></td>
+        <td><span class="style22">A</span></td>
+        <td><span class="style23">BCD</span></td>
+        <td><span class="style24">FE</span></td>
+        </tr>
+      <tr>
+        <td><span class="style1">7</span></td>
+        <td><span class="style21">1 1 2</span></td>
+        <td><span class="style22">A</span></td>
+        <td><span class="style23">DCB</span></td>
+        <td><span class="style24">EF</span></td>
+        </tr>
+      <tr>
+        <td><span class="style1">8</span></td>
+        <td><span class="style21">1 2 2</span></td>
+        <td><span class="style22">A</span></td>
+        <td><span class="style23">CDB</span></td>
+        <td><span class="style24">EF</span></td>
+        </tr>
+      <tr>
+        <td><span class="style1">9</span></td>
+        <td><span class="style21">1 3 2</span></td>
+        <td><span class="style22">A</span></td>
+        <td><span class="style23">CBD</span></td>
+        <td><span class="style24">EF</span></td>
+        </tr>
+      <tr>
+        <td><span class="style1">10</span></td>
+        <td><span class="style21">1 4 2</span></td>
+        <td><span class="style22">A</span></td>
+        <td><span class="style23">DBC</span></td>
+        <td><span class="style24">EF</span></td>
+        </tr>
+      <tr>
+        <td><span class="style1">11</span></td>
+        <td><span class="style21">1 5 2</span></td>
+        <td><span class="style22">A</span></td>
+        <td><span class="style23">BDC</span></td>
+        <td><span class="style24">EF</span></td>
+        </tr>
+      <tr>
+        <td><span class="style1">12</span></td>
+        <td><span class="style21">1 6 2</span></td>
+        <td><span class="style22">A</span></td>
+        <td><span class="style23">BCD</span></td>
+        <td><span class="style24">EF</span></td>
+        </tr>
+    </table>
+    <p class="style1">Now  decode these double-encoded  strings back into the encoded target-string, leave only the bundles and merge those that lay next to each other (important!). <span class="style27">At this point in the previous version of this algorithm i was now running in each branch through ALL possible ways a subgroup of 5 can be formed. With n being 12 and k being 5 that gives [n! / ((n-k)! * k!)] = 10824 subgroups. Then i'd check for bundle-sum in each and give out the highest one(s). Here's an implementation that achieves the same, but less processing-costly. </span>Then sort the bundle-numbers and look at the top 5 (that's the target-length after compression). Choose the branches with the highest top-5-bundle-number-sums):</p>
+    <table width="707" border="0">
+      <tr>
+        <td><span class="style1"></span></td>
+        <td><span class="style1"></span></td>
+        <td><div align="center"><span class="style21">5 top bundle-#</span></div></td>
+        <td><div align="center">sum of top 5</div></td>
+      </tr>
+      <tr>
+        <td width="22"><div align="center"><span class="style21">1</span></div></td>
+        <td width="470"><span class="style1"><em>24:r</em> <strong>72:n</strong> <em>24:c</em> 20:f 20:d <em>24:b</em> 16:r 20:c 20:r <em>24:c</em> <strong>36:d</strong> <strong>45:a</strong> 15:c</span></td>
+        <td width="113"><div align="center"><span class="style21">72 45 36 24 24</span></div></td>
+        <td width="84"><div align="center"><span class="style1">201</span></div></td>
+      </tr>
+      <tr>
+        <td><div align="center"><span class="style21">2</span></div></td>
+        <td><span class="style1"><em>24:r </em><strong>72:n</strong> <em>24:c 24:b</em> 16:r 20:f 20:d 20:c 20:r <em>24:c</em> <strong>36:d</strong> <strong>45:a</strong> 15:c</span></td>
+        <td><div align="center"><span class="style21">72 45 36 24 24</span></div></td>
+        <td><div align="center"><span class="style1">201</span></div></td>
+      </tr>
+      <tr>
+        <td><div align="center"><span class="style21">3</span></div></td>
+        <td><span class="style1"><em>24:r</em> <strong>72:n</strong> <em>24:c 24:b</em> 16:r 20:c 20:r 20:f 20:d <em>24:c </em><strong>36:d 45:a </strong>15:c</span></td>
+        <td><div align="center"><span class="style21">72 45 36 24 24</span></div></td>
+        <td><div align="center"><span class="style1">201</span></div></td>
+      </tr>
+      <tr>
+        <td><div align="center"><span class="style21">4</span></div></td>
+        <td><span class="style1"><em>24:r </em><strong>72:n</strong> <em>24:c</em> 20:f 20:d 20:c 20:r <em>24:b</em> 16:r <em>24:c </em><strong>36:d 45:a</strong> 15:c</span></td>
+        <td><div align="center"><span class="style21">72 45 36 24 24</span></div></td>
+        <td><div align="center"><span class="style1">201</span></div></td>
+      </tr>
+      <tr>
+        <td><div align="center"><span class="style21">5</span></div></td>
+        <td><span class="style1"><em>24:r</em> <strong>72:n</strong> <strong>44:c</strong> 20:r 20:f 20:d <em>24:b</em> 16:r <em>24:c</em> <strong>36:d 45:a</strong> 15:c</span></td>
+        <td><div align="center"><span class="style21">72 45 44 36 24</span></div></td>
+        <td><div align="center"><span class="style1">221</span></div></td>
+      </tr>
+      <tr>
+        <td><div align="center"><span class="style21">6</span></div></td>
+        <td><span class="style1"><em>24:r</em> <strong>72:n</strong> <strong>44:c</strong> 20:r <em>24:b</em> 16:r 20:f 20:d <em>24:c </em><strong>36:d 45:a</strong> 15:c</span></td>
+        <td><div align="center"><span class="style21">72 45 44 36 24</span></div></td>
+        <td><div align="center"><span class="style1">221</span></div></td>
+      </tr>
+      <tr>
+        <td><div align="center"><span class="style21">7</span></div></td>
+        <td><span class="style1"><em>24:r</em> <strong>72:n</strong> <em>24:c</em> 20:f 20:d <em>24:b</em> 16:r 20:c 20:r <strong>45:a 39:c 36:d</strong></span></td>
+        <td><div align="center"><span class="style21">72 45 39 36 24</span></div></td>
+        <td><div align="center">216</div></td>
+      </tr>
+      <tr>
+        <td><div align="center"><span class="style21">8</span></div></td>
+        <td><span class="style1"><em>24:r</em> <strong>72:n</strong> <em>24:c 24:b</em> 16:r 20:f 20:d 20:c 20:r <strong>45:a 39:c 36:d</strong></span></td>
+        <td><div align="center"><span class="style21">72 45 39 36 24</span></div></td>
+        <td><div align="center"><span class="style1">216</span></div></td>
+      </tr>
+      <tr>
+        <td><div align="center"><span class="style21">9</span></div></td>
+        <td><span class="style1"><em>24:r</em> <strong>72:n</strong> <em>24:c 24:b</em> 16:r 20:c 20:r 20:f 20:d <strong>45:a 39:c 36:d</strong></span></td>
+        <td><div align="center"><span class="style21">72 45 39 36 24</span></div></td>
+        <td><div align="center"><span class="style1">216</span></div></td>
+      </tr>
+      <tr>
+        <td><div align="center"><span class="style21">10</span></div></td>
+        <td><span class="style1"><em>24:r</em> <strong>72:n</strong> <em>24:c </em>20:f 20:d 20:c 20:r <em>24:b</em> 16:r <strong>45:a 39:c 36:d</strong></span></td>
+        <td><div align="center"><span class="style21">72 45 39 36 24</span></div></td>
+        <td><div align="center"><span class="style1">216</span></div></td>
+      </tr>
+      <tr>
+        <td bgcolor="#FFFF99"><div align="center"><span class="style21">11</span></div></td>
+        <td bgcolor="#FFFF99"><span class="style1"><em>24:r</em> <strong>72:n</strong> <strong>44:c</strong> 20:r 20:f 20:d <em>24:b</em> 16:r <strong>45:a 39:c 36:d</strong></span></td>
+        <td bgcolor="#FFFF99"><div align="center"><span class="style21">72 45 44 39 36</span></div></td>
+        <td bgcolor="#FFFF99"><div align="center"><span class="style26">236</span></div></td>
+      </tr>
+      <tr>
+        <td bgcolor="#FFFF99"><div align="center"><span class="style21">12</span></div></td>
+        <td bgcolor="#FFFF99"><span class="style1"><em> 24:r</em> <strong>72:n</strong> <strong>44:c</strong> 20:r <em>24:b</em> 16:r 20:f 20:d <strong>45:a 39:c 36:d</strong></span></td>
+        <td bgcolor="#FFFF99"><div align="center"><span class="style21">72 45 44 39 36</span></div></td>
+        <td bgcolor="#FFFF99"><div align="center"><span class="style26">236</span></div></td>
+      </tr>
+    </table>
+    <p class="style1">In this case the fifth top-bundle-number &lt;36&gt; occurs only once, hence the compression simply means to cut out everything but the top-bundles. In this case both branches give the same result after compression: <strong><strong>72:n</strong> <strong>44:c</strong> 45:a 39:c 36:d</strong><br />
+    , which gives <strong>ncacd</strong> as final result. This solution says: Sending the sequence &lt;AFD&gt; through a mapping process that has been informed by the coupling of 
+    &lt;DFB&gt; with &lt;acre&gt;,  the coupling of &lt;FAD&gt; with &lt;brncd&gt; and the coupling of &lt;BF&gt; with &lt;erfd&gt;, gives the resulting sequence of &lt;<strong>ncacd</strong>&gt;.</p>
+    <p class="style1">- - - - - -</p>
+    <p class="style1">It can also happen though that the fifth-top-bundle number occurs more than once; to show that possiblity let's pretend only the first branch [<em>24:r</em> <strong>72:n</strong> <em>24:c</em> 20:f 20:d <em>24:b</em> 16:r 20:c 20:r <em>24:c</em> <strong>36:d</strong> <strong>45:a</strong> 15:c] would have the highest sum. <br />
+    If that happens all equally valid compressions have to be done. As many results as there are different subgroups of 2 in 4 (=6) have to be given out (the code i made for that is interesting but won't be explained here; can be understood from reading the log though with different inputs than the prefilled ones):</p>
+    <table width="647" border="0">
+      <tr>
+        <td width="16">&nbsp;</td>
+        <td width="35"><span class="style28">24:r</span></td>
+        <td width="38"><span class="style29">72:n</span></td>
+        <td width="35"><span class="style28">24:c</span></td>
+        <td width="34"><span class="style21">20:f</span></td>
+        <td width="39"><span class="style21">20:d</span></td>
+        <td width="38"><span class="style28">24:b</span></td>
+        <td width="33"><span class="style21">16:r</span></td>
+        <td width="37"><span class="style21">20:c</span></td>
+        <td width="37"><span class="style21">20:r</span></td>
+        <td width="35"><span class="style28">24:c</span></td>
+        <td width="44"><span class="style29">36:d</span></td>
+        <td width="43"><span class="style29">45:a</span></td>
+        <td width="37"><span class="style21">15:c</span></td>
+        <td width="16">&nbsp;</td>
+        <td width="64"><span class="style1"></span></td>
+      </tr>
+      <tr>
+        <td><span class="style21">1</span></td>
+        <td><span class="style1">24:r</span></td>
+        <td><span class="style26">72:n</span></td>
+        <td><span class="style9">24:c</span></td>
+        <td><span class="style1"></span></td>
+        <td><span class="style1"></span></td>
+        <td>&nbsp;</td>
+        <td><span class="style1"></span></td>
+        <td><span class="style1"></span></td>
+        <td><span class="style1"></span></td>
+        <td>&nbsp;</td>
+        <td><span class="style26">36:d</span></td>
+        <td><span class="style26">45:a</span></td>
+        <td><span class="style1"></span></td>
+        <td><span class="style21"> &gt;</span></td>
+        <td><span class="style21">r n c d a</span></td>
+      </tr>
+      <tr>
+        <td><span class="style21">2</span></td>
+        <td><span class="style1">24:r</span></td>
+        <td><span class="style26">72:n</span></td>
+        <td>&nbsp;</td>
+        <td><span class="style1"></span></td>
+        <td><span class="style1"></span></td>
+        <td><span class="style9">24:b</span></td>
+        <td><span class="style1"></span></td>
+        <td><span class="style1"></span></td>
+        <td><span class="style1"></span></td>
+        <td>&nbsp;</td>
+        <td><span class="style26">36:d</span></td>
+        <td><span class="style26">45:a</span></td>
+        <td><span class="style1"></span></td>
+        <td><span class="style21">&gt;</span></td>
+        <td><span class="style21">r n b d a </span></td>
+      </tr>
+      <tr>
+        <td><span class="style21">3</span></td>
+        <td><span class="style1">24:r</span></td>
+        <td><span class="style26">72:n</span></td>
+        <td>&nbsp;</td>
+        <td><span class="style1"></span></td>
+        <td><span class="style1"></span></td>
+        <td>&nbsp;</td>
+        <td><span class="style1"></span></td>
+        <td><span class="style1"></span></td>
+        <td><span class="style1"></span></td>
+        <td><span class="style9">24:c</span></td>
+        <td><span class="style26">36:d</span></td>
+        <td><span class="style26">45:a</span></td>
+        <td><span class="style1"></span></td>
+        <td><span class="style21">&gt;</span></td>
+        <td><span class="style21">r n c d a</span></td>
+      </tr>
+      <tr>
+        <td><span class="style21">4</span></td>
+        <td>&nbsp;</td>
+        <td><span class="style26">72:n</span></td>
+        <td><span class="style9">24:c</span></td>
+        <td><span class="style1"></span></td>
+        <td><span class="style1"></span></td>
+        <td><span class="style9">24:b</span></td>
+        <td><span class="style1"></span></td>
+        <td><span class="style1"></span></td>
+        <td><span class="style1"></span></td>
+        <td>&nbsp;</td>
+        <td><span class="style26">36:d</span></td>
+        <td><span class="style26">45:a</span></td>
+        <td><span class="style1"></span></td>
+        <td><span class="style21">&gt;</span></td>
+        <td><span class="style21">n c b d a </span></td>
+      </tr>
+      <tr>
+        <td><span class="style21">5</span></td>
+        <td>&nbsp;</td>
+        <td><span class="style26">72:n</span></td>
+        <td><span class="style9">24:c</span></td>
+        <td><span class="style1"></span></td>
+        <td><span class="style1"></span></td>
+        <td>&nbsp;</td>
+        <td><span class="style1"></span></td>
+        <td><span class="style1"></span></td>
+        <td><span class="style1"></span></td>
+        <td><span class="style9">24:c</span></td>
+        <td><span class="style26">36:d</span></td>
+        <td><span class="style26">45:a</span></td>
+        <td><span class="style1"></span></td>
+        <td><span class="style21">&gt;</span></td>
+        <td><span class="style21">n c c d a</span></td>
+      </tr>
+      <tr>
+        <td><span class="style21">6</span></td>
+        <td>&nbsp;</td>
+        <td><span class="style26">72:n</span></td>
+        <td>&nbsp;</td>
+        <td><span class="style1"></span></td>
+        <td><span class="style1"></span></td>
+        <td><span class="style9">24:b</span></td>
+        <td><span class="style1"></span></td>
+        <td><span class="style1"></span></td>
+        <td><span class="style1"></span></td>
+        <td><span class="style9">24:c</span></td>
+        <td><span class="style26">36:d</span></td>
+        <td><span class="style26">45:a</span></td>
+        <td><span class="style1"></span></td>
+        <td><span class="style21">&gt;</span></td>
+        <td><span class="style21">n b c d a </span></td>
+      </tr>
+    </table>
+    <p class="style1">&nbsp;</p>
+    <p class="style1">&nbsp;</p>
+    <p class="style1"><em>Improvements / alternative approaches:</em></p>
+    <p class="style1">In the implementation above it could be added that multibooked elements deserve more space and therefore it shouldn't be compensated. Also in the compression-process ranks for solutions that contain target-character-duplicates could be weakened or totally surpressed. I think the permutation-process of the multibooked arrangements could be avoided if mergers would be found and favoured before all other possible arrangements have to be checked. In this case for instance...<br />24:r,74:n,24:<span class="style13"><strong>c</strong></span> + 20:<span class="style13"><strong>c</strong></span>,20:<span class="style12">r</span>/24:b,16:<span class="style12">r</span>/20:f,20:<span class="style12">d</span> + 45:<span class="style12">a</span>,15:c/24:<span class="style12">c</span>,36:d<br />
+    ...you can detect before the permutation that there will only be one arrangement (out of 24 possible ones) that gives the opportunity to merge characters and therefore be ranked higher. As you can see in the <em>how to</em> above the merged <strong>44:c</strong> indeed made the race.</p>
+    <p class="style1">I am sure there different and probably more effective (less line/loop-costly) approaches to a sequence-mapping algorithm. </p>
+    <p class="style1">Scanning first for meta-patterns (like reverse, mirror) can surely save lots of processing power. In a situation for instance like [given: ABC -&gt; defg, task: CBA -&gt; ?], it's clearly quicker to recognize that the source-sequence was reversed and therefore the target also can just be reversed. </p>
+    <p class="style1">Also i can think of an approach that looks at the relative position of each element according to the sequence as a whole. So in the situation [given: ABCD -&gt; efghij, task: BAC -&gt; ?], the 'movement' that happened on source-level from given to task could be encoded as [1/4 -&gt; 2/3, 2/4 -&gt; 1/3, 3/4 -&gt; 3/3, 4/4 -&gt; _ ] (A moved from 1st among 3 to 2nd among 4, B moved from...) and mapped upon the movement that needs to happen accordingly on target-level.</p>
+    <p class="style1">Distances between all subgroups could be another approach - probably the most costly but the most precise?</p>    </td>
+  </tr>
+</table>
+<p class="style1">&nbsp;</p>
+<p class="style1"></span></p>
+</p>
+<script>window.onload=onloadfunction</script>
+</body>
+</html>

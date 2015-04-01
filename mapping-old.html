@@ -1,0 +1,610 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>sequence mapping</title>
+<style type="text/css">
+<!--
+.style1 {font-family: Georgia, "Times New Roman", Times, serif}
+.style3 {
+	font-size: small;
+	color: #999999;
+	font-family: Georgia, "Times New Roman", Times, serif;
+}
+.style7 {
+	font-size: large;
+	font-family: Georgia, "Times New Roman", Times, serif;
+	font-weight: bold;
+}
+.style8 {font-family: Georgia, "Times New Roman", Times, serif; font-size: large;}
+.style9 {font-family: Georgia, "Times New Roman", Times, serif; font-style: italic; }
+.style10 {font-size: small}
+-->
+</style>
+</head>
+<script type="text/javascript">	
+
+function onloadfunction(){
+	//if there's something encoded in the URL after "?" (must have format "seqA1,seqA2-seqB1,seqB2-task") put it into the fields
+	if(unescape(document.location).split('?').length > 1){
+		if(unescape(document.location).split('?')[1].split('-').length > 1) document.getElementById("seqAinput").value = unescape(document.location).split('?')[1].split('-')[0]
+		else document.getElementById("seqAinput").value = unescape(document.location).split('?')[1]
+		
+		if(unescape(document.location).split('?')[1].split('-').length > 1) document.getElementById("seqBinput").value = unescape(document.location).split('?')[1].split('-')[1]
+		if(unescape(document.location).split('?')[1].split('-').length > 2) document.getElementById("task").value = unescape(document.location).split('?')[1].split('-')[2]
+		if(unescape(document.location).split('?')[1].split('-').length > 3) document.getElementById("targetlength").value = unescape(document.location).split('?')[1].split('-')[3]
+	}
+}
+
+function thefunction(form) {
+
+log = document.getElementById("logfield")
+results = document.getElementById("resultsfield")
+
+
+var seqAraw = document.getElementById("seqAinput").value
+var seqBraw = document.getElementById("seqBinput").value
+var seqAnewstring = document.getElementById("task").value
+
+//determine if phrases
+var phrases = false; if(seqAraw.split(' ').length > 1) phrases = true
+
+if(phrases){
+	var uniquephrasesA = new Array
+	var uniquephrasesB = new Array	
+	var elementsA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+	var elementsB = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+	//build uniquephrasesA
+	for(var b=0; b < seqAraw.split(',').length; b++)
+		for(var c=0; c < seqAraw.split(',')[b].split(' ').length; c++){
+			var already = false
+			for(var d=0; d < uniquephrasesA.length; d++) if(seqAraw.split(',')[b].split(' ')[c] == uniquephrasesA[d]) already = true
+			if(!already) uniquephrasesA.push(seqAraw.split(',')[b].split(' ')[c])
+		}
+	//now use uniquephrasesA to build character-version of seqAraw
+	log.value += "\nencoding phrases as single characters:\n"
+	var logadd = ""
+	var buffer = ""
+	for(var b=0; b < seqAraw.split(',').length; b++){
+		for(var c=0; c < seqAraw.split(',')[b].split(' ').length; c++){
+			for(var d=0; d < uniquephrasesA.length; d++) 
+				if(seqAraw.split(',')[b].split(' ')[c] == uniquephrasesA[d]){
+					buffer += elementsA[d]
+					logadd += uniquephrasesA[d] + ":" + elementsA[d] + "  "
+			} 
+		}buffer += ","; logadd += "/  "
+	}seqAraw = buffer.substring(0,buffer.length-1)
+
+	
+	//use uniquephrasesA to build character-version of seqAnewstring
+	var logadd2 = ""
+	var buffer2 = ""
+	for(var c=0; c < seqAnewstring.split(' ').length; c++){
+		for(var d=0; d < uniquephrasesA.length; d++) 
+			if(seqAnewstring.split(' ')[c] == uniquephrasesA[d]){
+				buffer2 += elementsA[d]
+				logadd2 += uniquephrasesA[d] + ":" + elementsA[d] + "  "
+			}
+	}seqAnewstring = buffer2
+
+	//build uniquephrasesB
+	for(var b=0; b < seqBraw.split(',').length; b++)
+		for(var c=0; c < seqBraw.split(',')[b].split(' ').length; c++){
+			var already = false
+			for(var d=0; d < uniquephrasesB.length; d++) if(seqBraw.split(',')[b].split(' ')[c] == uniquephrasesB[d]) already = true
+			if(!already) uniquephrasesB.push(seqBraw.split(',')[b].split(' ')[c])
+		}
+	//now use uniquephrasesB to build character-version of seqBraw
+	var logadd3 = ""
+	var buffer3 = ""
+	for(var b=0; b < seqBraw.split(',').length; b++){
+		for(var c=0; c < seqBraw.split(',')[b].split(' ').length; c++){
+			for(var d=0; d < uniquephrasesB.length; d++) 
+				if(seqBraw.split(',')[b].split(' ')[c] == uniquephrasesB[d]){
+					buffer3 += elementsB[d]
+					logadd3 += uniquephrasesB[d] + ":" + elementsB[d] + "  "
+
+				}
+		}buffer3 += ","; logadd3 += "/  "
+	}seqBraw = buffer3.substring(0,buffer3.length-1)
+
+	log.value += "[sources] "+logadd.substring(0,logadd.length-3) + "\n[targets] " + logadd3.substring(0,logadd3.length-3) + "\n[task] " + logadd2 + "\n"
+}
+
+var seqAnew = new Array; for(var a=0; a < seqAnewstring.length; a++) seqAnew[a] = seqAnewstring.charAt(a)
+
+
+
+//display input
+log.value += "\n"+seqAraw.split(',').length + " mappings given:\n"
+for(var a=0; a < seqAraw.split(',').length; a++) log.value += seqAraw.split(',')[a] + " -> " + seqBraw.split(',')[a] + "\n"
+log.value += "\ntask:\n"+ seqAnewstring + " -> ?\n"
+
+
+
+//find unique elements in seqAraw
+var seqAunique = new Array
+for(var n=0; n < seqAraw.length; n++){
+  var already=false; for(var k=0; k < seqAunique.length; k++) if(seqAraw.charAt(n) == seqAunique[k]) already=true
+  if(!already && seqAraw.charAt(n)!=',') seqAunique.push(seqAraw.charAt(n))
+}
+log.value += "\nunique source elements: "; for(var a=0; a < seqAunique.length; a++) log.value += seqAunique[a]+" "
+
+
+
+//check for elements in seqAnew that are not covered by elements in seqAraw - build those in with placeholders right at raw level
+var printed=false;
+for(var f=0; f < seqAnew.length; f++){var exists=false; 
+  for(var g=0; g < seqAunique.length; g++) if(seqAnew[f] == seqAunique[g]) exists=true   
+  if (!exists){
+  	seqAunique.push(seqAnew[f])
+    seqAraw += ","+seqAnew[f]
+    seqBraw += ",#"
+    if(!printed) log.value += " + uncovered task element(s): "
+    log.value += seqAnew[f]+" "
+    printed = true
+  } 
+}
+
+
+
+//expand seqA & seqB with LCM for each pairing
+var seqAexp = new Array
+var seqBexp = new Array
+log.value += "\n\nexpanding source- & target-sequences with respective couple-LCM:"
+
+for(var s=0; s < seqAraw.split(',').length; s++){
+  var a = seqAraw.split(',')[s].length; var b = seqBraw.split(',')[s].length;
+  var num1, num2; if(a > b){num1 = a; num2 = b;} else{num1 = b; num2 = a;}  
+  var i=0; var out=false; while(!out){ i++;
+    if ((num1 * i) % num2 == 0 || i > num2) out = true;
+  } var LCM = i * num1;
+ seqAexp[s] = ""
+ for(var z=0; z < a; z++) for(var r=0; r < (LCM / a); r++) seqAexp[s] += seqAraw.split(',')[s].charAt(z)
+ seqBexp[s] = ""
+ for(var z=0; z < b; z++)for(var r=0; r < (LCM / b); r++) seqBexp[s] += seqBraw.split(',')[s].charAt(z) 
+ 
+ log.value += "\n"+LCM+"\t"+seqAexp[s]
+ log.value += "\n\t"+seqBexp[s]
+}
+
+
+
+//fish raw content for seqAunique 
+var fishing = new Array
+for(var a=0; a < seqAunique.length; a++){ fishing[a]=""; 
+  for(var e=0; e < seqAexp.length; e++){ 
+  	for(var f=0; f < seqAexp[e].length; f++) if(seqAexp[e].charAt(f) == seqAunique[a]) fishing[a]+= seqBexp[e].charAt(f);
+    fishing[a]+="/";
+  }
+}//log.value += "\nraw fishing: "+fishing
+
+
+
+//refine content
+for(var x=0; x < fishing.length; x++){
+  var newfishingbuffer = ""
+  for(var y=0; y < fishing[x].split('/').length; y++) if(fishing[x].split('/')[y].length > 0){
+    var fishy = fishing[x].split('/')[y]
+    //log.value += fishy
+    var newfishy=""
+    var bufferchar = fishy.charAt(0)
+    var thiscount = 1
+    for(var v=1; v < fishy.length; v++){    
+      if(fishy.charAt(v) == bufferchar) thiscount++
+      else{
+        newfishy += thiscount+":"+bufferchar+","
+        bufferchar = fishy.charAt(v)
+        thiscount = 1}       
+    }
+    newfishy += thiscount+":"+bufferchar
+    newfishingbuffer += newfishy+"/"
+  }
+ fishing[x] = newfishingbuffer.substring(0,newfishingbuffer.length-1)
+}//log.value += "\nrefined fishing: "+fishing
+log.value += "\n\nall task-source-elements with their encoded targets:\n"
+for(var c=0; c < seqAunique.length; c++) log.value += seqAunique[c]+"   "+fishing[c]+"\n"
+
+
+
+//build raw-string for seqAnew
+var rawstring =""
+for(var f=0; f < seqAnew.length; f++) 
+	for(var g=0; g < seqAunique.length; g++)
+  		if(seqAnew[f] == seqAunique[g]) rawstring += fishing[g]+"+"
+rawstring = rawstring.substring(0,rawstring.length-1)
+log.value += "\nencoded targets concatenated according to task-sequence:\n"  
+log.value += seqAnewstring+" -> "+rawstring
+
+
+
+//find branch-count
+log.value += "\n\nmultiply targets with LCM amongst all targets LCM and with LCM for equal embedding of parallel targets:"
+var branchcount=1
+var temp = new Array
+var embedlcm = new Array
+for(var a=0; a < rawstring.split('+').length; a++){
+  branchcount *= rawstring.split('+')[a].split('/').length 
+  var already=false; for(var c=0; c < embedlcm.length; c++) if(rawstring.split('+')[a].split('/').length == embedlcm[c]) already=true
+  if(!already) embedlcm.push(rawstring.split('+')[a].split('/').length)
+  for(var b=0; b < rawstring.split('+')[a].split('/').length; b++) temp.push(rawstring.split('+')[a].split('/')[b])
+} embedlcm.sort() //log.value += "\n"+embedlcm
+log.value += "\nbranches: "+branchcount
+
+
+
+//find LCM of embedding
+var maxlcmE=1; for(var z=0; z < embedlcm.length; z++) maxlcmE *= embedlcm[z]
+var outE=false; var z=0;
+while(!outE){
+    z += embedlcm[embedlcm.length-1]
+    var badE=false; for(var d=0; d < embedlcm.length-1; d++) if(z % embedlcm[d] != 0) badE = true
+    if(!badE) outE = true
+    if(z >= maxlcmE) outE = true
+}var LCMembed = z 
+log.value += "\nembedding LCM: "+LCMembed
+
+
+
+//find lengths
+var thislength = 0; var lengths = new Array
+for(var a=0; a < temp.length; a++){
+  thislength = 0
+  for(var b=0; b < temp[a].split(',').length; b++){
+    thislength += parseInt(temp[a].split(',')[b].split(':')[0])   
+  }
+  var already = false
+  for(var c=0; c < lengths.length; c++) if(thislength == lengths[c]) already=true
+  if (!already) lengths.push(thislength)
+} lengths.sort() //log.value += "\n "+lengths
+
+
+
+//find LCM of lengths
+var maxlcm = 1; for(var i=0; i < lengths.length; i++) maxlcm *= lengths[i]
+var out=false; var i=0
+while(!out){
+    i += lengths[lengths.length-1]
+    var bad=false; for(var d=0; d < lengths.length-1; d++) if(i % lengths[d] != 0) bad = true
+    if(!bad) out = true
+    if(i >= maxlcm) out = true
+}var LCM = i; 
+log.value += "\ntargets LCM: "+LCM
+
+
+
+
+//with LCM and branches go trough again
+
+//build through-multiplied string
+var mainstring = ""
+for(var a=0; a < rawstring.split('+').length; a++){ //for each new letter
+  var oldfactor = LCMembed / rawstring.split('+')[a].split('/').length; var factor = 0
+  for(var b=0; b < rawstring.split('+')[a].split('/').length; b++){ //for each backslash
+   
+    var addup=0; for(var c=0; c < rawstring.split('+')[a].split('/')[b].split(',').length; c++){ //for each komma
+      addup += parseInt(rawstring.split('+')[a].split('/')[b].split(',')[c].split(':')[0])
+    }factor = oldfactor * (LCM / addup)
+    
+    for(var c=0; c < rawstring.split('+')[a].split('/')[b].split(',').length; c++){ //for each komma again to rebuild
+      mainstring += parseInt(rawstring.split('+')[a].split('/')[b].split(',')[c].split(':')[0]) * factor 
+                   +":"+ rawstring.split('+')[a].split('/')[b].split(',')[c].split(':')[1] +","
+    }   
+   mainstring = mainstring.substring(0,mainstring.length-1) //cut last char away
+   mainstring += "/"
+  }mainstring = mainstring.substring(0,mainstring.length-1)
+   mainstring += "+"
+}mainstring = mainstring.substring(0,mainstring.length-1)
+log.value += "\n\nencoded target-sequence multiplied through:\n"
+log.value += seqAnewstring+" -> "+mainstring
+
+
+
+//fill branches
+var branches = new Array // will become length of [branchcount]
+
+for(var a=0; a < mainstring.split('+').length; a++){
+  var buffer=""
+  var spread = branchcount / mainstring.split('+')[a].split('/').length 
+  //log.value += "\n"+spread
+  for(var d=0; d < spread; d++) buffer += mainstring.split('+')[a] + "|"
+  buffer = buffer.split('/').join('|')
+  
+  buffer = buffer.substring(0,buffer.length-1);
+  //log.value += "\n"+buffer
+  for(var b=0; b < buffer.split('|').length; b++){
+  branches[b] += buffer.split('|')[b] + "+"
+  }
+}
+for(var a=0; a < branches.length; a++)branches[a] = branches[a].substring(9,branches[a].length-1); //cut first 'undefined' und last + away
+log.value += "\n\nall branches:\n"
+for(var a=0; a < branches.length; a++) log.value += (a+1)+"  "+branches[a]+"\n"
+
+
+
+//go through all branches
+if(document.getElementById("targetlength").value == "auto"){
+	var factor = 0
+	for(var a=0; a < seqAraw.split(',').length; a++) factor += seqBraw.split(',')[a].length / seqAraw.split(',')[a].length
+	factor = (factor / seqAraw.split(',').length) * seqAnew.length
+	//log.value += "\n\nfactor: "+ factor
+	var outcomelength = Math.round(factor)
+	log.value += "\nlength of task-target determined by averaging given source-target-ratios: "+outcomelength
+} else {
+	var outcomelength = parseInt(document.getElementById("targetlength").value)
+	log.value += "\nlength of task-target as manually indicated: "+outcomelength
+}
+
+
+var maxweight=0; 
+var topscores = new Array
+var buffercollect = new Array
+
+for(var x=0; x < branches.length; x++){
+  var letters = new Array
+  for(var a=0; a < branches[x].split('+').length; a++) for(var b=0; b < branches[x].split('+')[a].split(',').length; b++) letters.push(branches[x].split('+')[a].split(',')[b])
+  
+   	var scheme = new Array
+	for(var n=1; n < Math.pow(2,letters.length); n *= 2) scheme.push(n)
+	scheme.reverse()
+  
+    for(var a=0; a < Math.pow(2,letters.length); a++){   
+
+	//workaround for binary(int) function in java 
+	var tobin = a
+	var buildbin = ""	  
+	for(var p=0; p < scheme.length; p++){
+  		if(tobin >= scheme[p]){ buildbin += '1'; tobin -= scheme[p] }
+  		else buildbin += '0'
+	}
+	//log.value += buffer
+    var bin = buildbin // just binary(a) in java
+     
+    var count = 0
+    for(var b=0; b < bin.length; b++) if(bin.charAt(b) == '1') count++
+  
+    var buffer = ""
+    if(count == outcomelength){
+    	for(var c=0; c < bin.length; c++) if(bin.charAt(c) == '1') buffer += letters[(letters.length - bin.length) + c] + ","
+    	buffer = buffer.substring(0,buffer.length-1)
+   	 	buffercollect.push(buffer)
+    
+    	var weight = 0 
+    	for(var d=0; d < buffer.split(',').length; d++) weight += parseInt(buffer.split(',')[d].split(':')[0])
+    	if (weight > maxweight) maxweight = weight 
+    	//log.value += "\n" + bin + " " + count + " " + buffer + "  " + weight   
+    }
+  }
+}
+
+
+
+//topscores
+for(var a=0; a < buffercollect.length; a++){
+  var weight = 0
+  for(var d=0; d < buffercollect[a].split(',').length; d++){
+    weight += parseInt(buffercollect[a].split(',')[d].split(':')[0])
+  }
+  if (weight == maxweight){ 
+    var already=false
+    for(var f=0; f < topscores.length; f++) if(topscores[f] == buffercollect[a]) already = true
+    if(!already) topscores.push(buffercollect[a])
+  }
+  }
+log.value += "\n\nmax score across all "+buffercollect.length+" right-length-constellation within all "+branches.length+" branches: "+maxweight
+log.value += "\n"+topscores
+
+
+// encode back into characters, strip of internal attributes
+log.value += "\n\ntherefore resulting in the following "+topscores.length+" (equally valid) decoded target-sequence(s) for the task-source based on the given mapping-couples:"
+var storeresults = new Array
+for(var a=0; a < topscores.length; a++){
+  var buffer = ""
+  for(var b=0; b < topscores[a].split(',').length; b++){
+    buffer += topscores[a].split(',')[b].split(':')[1]
+  }
+  log.value += "\n"+(a+1)+"  "+seqAnewstring+" -> "+buffer
+  if(!phrases)results.value += (a+1)+"  "+seqAnewstring+" -> "+buffer+"\n"
+  storeresults.push(buffer)
+}
+
+if(phrases){
+	log.value += "\ndecoding characters back to their respective phrases:\n"
+	log.value += "\nthe new source sequence [" + document.getElementById("task").value + "] corresponds with these target sequence(s):\n"
+	results.value += "new source [" + document.getElementById("task").value + "] leads to target(s):\n"
+	
+	for(var t=0; t < storeresults.length; t++){
+	var buffer = ""
+		for(var u=0; u < storeresults[t].length; u++)
+			for(var v=0; v < elementsB.length; v++)
+				if(elementsB[v] == storeresults[t].charAt(u))
+					buffer += uniquephrasesB[v]+" "
+	log.value += (t+1) + ": " + buffer + "\n"
+	results.value += (t+1) + ": " + buffer + "\n"
+	}
+	
+
+
+}
+
+
+log.value += "\n\n- - - - - - - -\n\n"
+
+
+
+}
+
+
+</script>
+<body>
+
+<p>&nbsp;</p>
+<table width="80%" border="0" align="center">
+  <tr>
+    <td width="46%"><p><span class="style7">mapping </span><span class="style8">sequences</span></p>
+      <p class="style3"> Version 1 / April 15, 2012 / Benjamin Aaron Degenhart</p>
+      <p class="style3">&nbsp;</p>
+      <p class="style1">The question that this algorithm answers is; given the sequence of A1 is coupled with B1 and A2 is coupled with B2, what is B3 going to be if we know A3? <br />
+      Or differently: What is the result if we send the sequence A3 through a mapping process that has been informed by the coupling of A1 with B1 and the coupling of A2 with B2?</p>
+      <p class="style1">You can enter one, two or more couples. The number of source sequences has to be the same as the number of target sequences.</p>
+      <p class="style1">&nbsp;</p>
+      <p class="style1"> I thought about what an artificial creativity would need to be able to do. I came to think that creativity means recombining existing elements so that this combination becomes an element in itself. The exponential growth of possible combinations with increasing elements requires better and better ways to choose with branch to run down. Human minds  use metaphors to find relevant combinations. They  mimic the structural information from successful combinations in other domains. The metaphor establishes a mapping between a source- and a target level. Changes in either one of them will then be interpreted in the other one. 'Artificial creativity' needs a way to pull in structural information from other domains to test possible combinations in a pool of elements more effectively - a digital metaphor? It has to go 'collect' graph-navigational data from targets in other domains. By making the mapping-process complex enough the source can be mapped upon any branch in any target - of course it is of interest to choose targets first that are  likely to seed potent structural information into the source.</p>
+      <p class="style1">This algorithm is restricted to monochronic sequences and requires that the data is already processed in a way where the elements are  coming from a pool that  scopes the totality of its domain. Things like &quot;pasta&quot; and &quot;noodles&quot;  have to be unified/matched.</p>
+      <p class="style1">In this simplified <a href="mapping-old.html?getup shower coffee emails,coffee teethbrushing emails gosleep-heatwater boilpasta warmupsauce putonplate eat,cutbread addbutter addcheese putonplate eat-getup coffee emails gosleep">example with phrases</a>  are two source-sequences from the category of &lt;daily routines&gt; and two target-sequences from the category of &lt;making food&gt;. The first coupling says &quot;these 4 steps i go through every morning are like these 5 steps i go through for making pasta&quot;  and the second coupling says &quot;these 4 steps i go through every evening are like these 5 steps i<span class="style1"> go through when eating a cheese sandwich (for whatever reason i choose to compare these two levels)</span><span class="style1">. Then i go wild in my daily routine and find myself performing </span>a new sequence of 4 steps. I wonder; how would this new chain of events be like if it would be for making food?? Most results will be complete nonsense or impossible to apply to actual food making - but maybe, maybe there's one that pokes me towards a new recipe, a  cominbation that hasn't been tested before :)</p>
+      <p class="style1">&nbsp;</p>
+      <p class="style1">&nbsp;</p></td>
+    <td width="8%"><p align="left" class="style1">&nbsp;</p>
+      <p align="left" class="style1">&nbsp;</p>    </td>
+    <td width="46%"><p align="left" class="style1">given source sequence(s):
+        </p>
+      <p align="left" class="style1">
+        <input name="seqAinput" type="text" id="seqAinput" value="DFB,FAD" size="48" width="260"/>
+          </p>
+      <p align="left" class="style1">given target sequence(s):      </p>
+      <p align="left" class="style1">
+        <input name="seqBinput" type="text" id="seqBinput" value="acre,brncd" size="48" width="260"/>
+            </p>
+      <p align="left" class="style1">new source sequence:      </p>
+      <p align="left" class="style1">
+        <input name="task" type="text" id="task" value="AFDB" size="26" width="160" />
+            </p>
+      <p align="left" class="style1">corresponding target sequence: ?</p>
+      <p align="left" class="style1">desired length of new target: 
+        <input name="targetlength" type="text" id="targetlength" value="auto" size="6" />
+      </p>
+      <p align="left" class="style1">&nbsp;</p>
+      <p align="left" class="style1">
+        <input type="submit" name="go" id="go" value="compute" onclick="thefunction(form)"/>
+        <a href="mapping-old.html"><span class="style10">reset</span></a> </p>
+      <p align="left" class="style1">&nbsp;</p>
+      <p align="left" class="style1">results:</p>
+      <p align="left" class="style1">
+      <textarea name="resultsfield" cols="48" rows="8" id="resultsfield"></textarea>
+    </p>
+    <p align="left" class="style1">log:</p>
+    <p align="left" class="style1">
+      <textarea name="logfield" cols="48" rows="24" id="logfield"></textarea>
+    </p></td>
+  </tr>
+  <tr>
+    <td colspan="3"><p class="style9">How it works:</p>
+      <p class="style1">2 couples given:<br />
+  DFB -&gt; acre<br />
+  FAD -&gt; brncd</p>
+      <p class="style1">task:<br />
+        AFDB -&gt; ?</p>
+      <p class="style1">Find LCM (least common multiple) for each coupling and multiply  each element with the factor of [own seq.length / couple-lcm] so that both sequences in the coupling have the same lengths. </p>
+      <p class="style1">LCM of 3 &amp; 4 is 12:</p>
+      <table width="120" border="0">
+        <tr>
+          <td>D</td>
+          <td>D</td>
+          <td>D</td>
+          <td>D</td>
+          <td>F</td>
+          <td>F</td>
+          <td>F</td>
+          <td>F</td>
+          <td> B</td>
+          <td>B</td>
+          <td>B</td>
+          <td>B</td>
+        </tr>
+        <tr>
+          <td>a</td>
+          <td>a</td>
+          <td>a</td>
+          <td>c</td>
+          <td>c</td>
+          <td>c</td>
+          <td>r</td>
+          <td>r</td>
+          <td>r</td>
+          <td>e</td>
+          <td>e</td>
+          <td>e</td>
+        </tr>
+      </table>
+      <p><span class="style1"> LCM of 3 &amp; 5 is 15:</span></p>
+      <table width="150" border="0">
+        <tr>
+          <td>F</td>
+          <td>F</td>
+          <td>F</td>
+          <td>F</td>
+          <td>F</td>
+          <td>A</td>
+          <td>A</td>
+          <td>A</td>
+          <td>A</td>
+          <td>A</td>
+          <td>D</td>
+          <td>D</td>
+          <td>D</td>
+          <td>D</td>
+          <td>D</td>
+        </tr>
+        <tr>
+          <td>b</td>
+          <td>b</td>
+          <td>b</td>
+          <td>r</td>
+          <td>r</td>
+          <td>r</td>
+          <td>n</td>
+          <td>n</td>
+          <td>n</td>
+          <td>c</td>
+          <td>c</td>
+          <td>c</td>
+          <td>d</td>
+          <td>d</td>
+          <td>d</td>
+        </tr>
+      </table>
+    <p class="style1">Find out if there are elements in the new source sequence that are not present in any given source sequence - if so (e.g. &quot;X&quot;) then add &quot;,X&quot; to the source input and &quot;,#&quot; to the target input; code-internally it will be treated as another coupling whereas we know it's a placeholder when &quot;#&quot; appears in the new target result.</p>
+    <p class="style1">Extract the corresponding target-elements for each element in the new source sequence &lt;AFDB&gt; and rewrite it in encoded form:</p>
+    <p class="style1">A: r n n n c [1:r,3:n,1:c]</p>
+    <p class="style1">F: c c r r / b b b r [2:c,2:r/3:b,1:r]</p>
+    <p class="style1">D: a a a c / c c d d d [3:a,1:c/2:c,3:d]</p>
+    <p class="style1">B: r e e e [1:r,3:e]</p>
+    <p class="style1">Concatenate encoded raw-string:</p>
+    <p class="style1">AFDB -&gt;  1:r,3:n,1:c + 2:c,2:r/3:b,2:r + 3:a,1:c/2:c,3:d + 1:r,3:e</p>
+    <p class="style1">Multiply the letter-numbers with two different factors to assign the target-letters  weight, that gives each the correct chance to appear in the result; one is the LCM of all collected letter-packages   and the other one is the LCM of all vertical expansions (bifurcations in the graph) that  have to be undergone because of multiple occupancy of source elements with target elements.</p>
+    <p class="style1">To determine the LCM of the letter-packages  only look at the  sums of each letter package:</p>
+    <p class="style1">5 + 4/5 + 4/5 +4</p>
+    <p class="style1">The two different sums of 4 and 5 give  a LCM of 20. Apply these to the raw-string gives:</p>
+    <p class="style1">4:r,15:n,4:c + 10:c,10:r/12:b,8:r + 15:a,4:c/8:c,12:d + 5:r,15:e</p>
+    <p class="style1">Look at the occupancy-numbers to determine the LCM required to achieve compensation for the bifurcations:</p>
+    <p class="style1">1  + 2 + 2 + 1</p>
+    <p class="style1">The LCM of these is 2, apply it to the raw-string:</p>
+    <span class="style1">8:r,24:n,8:c + 10:c,10:r/12:b,8:r + 15:a,5:c/8:c,12:d + 10:r,30:e    </span>
+    <p class="style1">Multiplying all occupancy-numbers gives 4; the number of branches required to investigate all equally valid options. Construct the branches, strip off code-internal string-markers + and , :</p>
+    <p class="style1">8:r 24:n 8:c 10:c 10:r 15:a 5:c 10:r 30:e<br />
+    8:r 24:n 8:c 12:b 8:r 8:c 12:d 10:r 30:e <br />
+    8:r 24:n 8:c 10:c 10:r 15:a 5:c 10:r 30:e  <br />
+    8:r 24:n 8:c 12:b 8:r 8:c 12:d 10:r 30:e</p>
+    <p class="style1">Leaving it here would give target-sequences with length 9. Averaging the ratios of the given couples it's expected to get a new target sequence with length 6. Take one branch at a time and look at all the different ways subgroups of 6 can be formed - weigh each subgroup by adding up the numbers of its elements.</p>
+    <p class="style1">The first subgroup of 6 in the first branch for instance [8:r 24:n 8:c 10:c 10:r 15:a] has a weight of 75. </p>
+    <p class="style1">Run through all the 336 constellations of 6 across the 4 branches finds a maximum weight of 99. If required; at this point solutions with letter-duplicates could be (not implemented) surpressed by introducing a downgrading factor in the weighing process in the event of finding duplicates.</p>
+    <p class="style1">In this case this maximum was  achieved by only one solution; our final mapping result: </p>
+    <p class="style1">ncrare</p>
+    <p class="style1">This solution says: Sending the sequence &lt;AFDB&gt; <span class="style1">through a mapping process that has been informed by the coupling of 
+    &lt;DFB&gt; with &lt;acre&gt; and the coupling of &lt;FAD&gt; with &lt;brncd&gt;, the resulting sequence is &lt;</span>ncrare&gt;.</p>
+    <p class="style1">&nbsp;</p>
+    <p class="style1">&nbsp;</p>
+    <p class="style1"><em>Alternative approaches:</em></p>
+    <p class="style1">I am sure there different and probably more effective (less line/loop-costly) approaches to a sequence-mapping algorithm. </p>
+    <p class="style1">Scanning first for meta-patterns (like reverse, mirror) can surely save lots of processing power. In this situation for instance [given: ABC -&gt; defg, task: CBA -&gt; ?], it's clearly quicker to recognize that the source-sequence was reversed and therefore the target also can just be reversed. </p>
+    <p class="style1">Also i can think of an approach that looks at the relative position of each element according to the sequence as a whole. So in the situation [given: ABCD -&gt; efghij, task: BAC -&gt; ?], the 'movement' that happened on source-level from given to task could be encoded as [1/4 -&gt; 2/3, 2/4 -&gt; 1/3, 3/4 -&gt; 3/3, 4/4 -&gt; _ ] (A moved from 1st among 3 to 2nd among 4, B moved from...) and mapped upon the movement that needs to happen accordingly on target-level.</p>
+    <p class="style1">Distances between all subgroups could be another approach - probably the most costly but the most precise?</p>
+    </td>
+  </tr>
+</table>
+<p class="style1">&nbsp;</p>
+<p class="style1"></span></p>
+</p>
+<script>window.onload=onloadfunction</script>
+</body>
+</html>
